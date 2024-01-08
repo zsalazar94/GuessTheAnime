@@ -33,7 +33,9 @@
     {
         defaultConnection = Config.GetConnectionString("Default") ?? "unknown";
         string? line;
-        StreamReader sr = new StreamReader("wwwroot/AudioText.txt");
+        //StreamReader sr = new StreamReader("wwwroot/AudioText.txt");
+        StreamReader sr = new StreamReader("wwwroot/TextFile.txt");
+
         //Read the first line of text
         line = sr.ReadLine();
         //Continue to read until you reach end of file
@@ -60,7 +62,7 @@
         await js.InvokeVoidAsync("setAudioSourceAndPlay", "audio", "audioSource", audioFile, seconds);   
     }
 
-    private async Task NewOpening()
+    private void NewOpening()
     {
         audioIndex = rnd.Next(audioFiles.Count);
 
