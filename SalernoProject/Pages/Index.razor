@@ -26,7 +26,7 @@
     private string defaultConnection = "";
     int audioIndex = 0;
     private Random rnd = new Random();
-    private AudioFile currentAudio;
+    private AudioFile? currentAudio;
 
     private List<AudioFile> audioFiles = new List<AudioFile>();
     protected async override Task OnInitializedAsync()
@@ -44,7 +44,7 @@
             string[] currentLine = line.Split('-');
             if (currentLine.Length == 4)
             {
-                AudioFile currAudioInfo = new AudioFile(currentLine[0], currentLine[1], currentLine[2], currentLine[3]);
+                AudioFile currAudioInfo = new AudioFile(currentLine[0].Trim(), currentLine[1].Trim(), currentLine[2].Trim(), currentLine[3].Trim());
                 audioFiles.Add(currAudioInfo);
             }
             //Read the next line
@@ -52,6 +52,7 @@
         }
         //close the file
         sr.Close();
+        NewOpening();
 
     }
 
