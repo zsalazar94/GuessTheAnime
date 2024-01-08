@@ -1,17 +1,70 @@
 ﻿@page "/"
+@using SalernoProject.Data
+@using System.IO;
 @inject IConfiguration Config
+@inject IJSRuntime js;
 
 <PageTitle>Index</PageTitle>
 
 <h1>Welcome to Anime Openings!</h1>
 
+<button @onclick="NewOpening">New Opening</button>
+<button @onclick="() => PlayAudio(10000)">10 Seconds</button>
+<button @onclick="() => PlayAudio(20000)">20 Seconds</button>
+<button @onclick="() => PlayAudio(30000)">30 Seconds</button>
+
+
+
+<audio id="audio">
+    <source id="audioSource" src="@audioFile" />
+</audio>
+
 
 @code
 {
+    private string audioFile = "";
     private string defaultConnection = "";
-    protected override void OnInitialized()
+    int audioIndex = 0;
+    private Random rnd = new Random();
+    private AudioFile currentAudio;
+
+    private List<AudioFile> audioFiles = new List<AudioFile>();
+    protected async override Task OnInitializedAsync()
     {
         defaultConnection = Config.GetConnectionString("Default") ?? "unknown";
+        string? line;
+        StreamReader sr = new StreamReader("wwwroot/AudioText.txt");
+        //Read the first line of text
+        line = sr.ReadLine();
+        //Continue to read until you reach end of file
+        while (line != null)
+        {
+            string[] currentLine = line.Split('-');
+            if (currentLine.Length == 4)
+            {
+                AudioFile currAudioInfo = new AudioFile(currentLine[0], currentLine[1], currentLine[2], currentLine[3]);
+                audioFiles.Add(currAudioInfo);
+            }
+            //Read the next line
+            line = sr.ReadLine();
+        }
+        //close the file
+        sr.Close();
+
+    }
+
+    private async Task PlayAudio(int seconds)
+    {
+
+        audioFile = currentAudio.filePath;
+        await js.InvokeVoidAsync("setAudioSourceAndPlay", "audio", "audioSource", audioFile, seconds);   
+    }
+
+    private async Task NewOpening()
+    {
+        audioIndex = rnd.Next(audioFiles.Count);
+
+        currentAudio = audioFiles[audioIndex];
     }
 }
 
