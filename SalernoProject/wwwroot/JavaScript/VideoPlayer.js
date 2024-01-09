@@ -1,10 +1,8 @@
 ﻿var videoTimeout;
-function hideVideoAndPlay(video, videoSource, filePath, timeout)
+function hideVideoAndPlay(video, timeout)
 {
     clearTimeout(videoTimeout);
     var videoElement = document.getElementById(video);
-    var sourceElement = document.getElementById(videoSource);
-    sourceElement.src = filePath;
     videoElement.style.display = "none";
     videoElement.load();
     videoElement.play();
@@ -16,12 +14,10 @@ function hideVideoAndPlay(video, videoSource, filePath, timeout)
 
 }
 
-function showVideoAndPlay(video, videoSource, filePath, dotNetHelper)
+function showVideoAndPlay(video, dotNetHelper)
 {
     clearTimeout(videoTimeout);
     var videoElement = document.getElementById(video);
-    var sourceElement = document.getElementById(videoSource);
-    sourceElement.src = filePath;
     videoElement.style.display = "block";
     videoElement.load();
     videoElement.play();
@@ -34,4 +30,11 @@ function showVideoAndPlay(video, videoSource, filePath, dotNetHelper)
         
     }, 10000);
 
+}
+
+function pauseVideo(video) {
+    clearTimeout(videoTimeout);
+    var videoElement = document.getElementById(video);
+    videoElement.style.display = "none";
+    videoElement.pause();
 }

@@ -6,6 +6,15 @@
 @inject BlobService BlobService
 
 <PageTitle>Anime Openings Tester</PageTitle>
+<style>
+    .video {
+        max-width: 60vw; 
+        max-height: 60vh; 
+        width: auto; 
+        height: auto; 
+        display: none
+    }
+</style>
 
 <h1>Welcome to Anime Openings Quiz!</h1>
 
@@ -16,14 +25,13 @@
 <button @onclick="PlayVideo">Reveal Answer</button>
 
 <br />
-<h2>@animeName</h2>
-<h2>@openingNumber</h2>
-<h2>@openingName</h2>
+<div hidden="@hiddenLabel">
+    <h2>@animeName - @openingNumber - @openingName</h2>
 
-<video id="video">
-    <source id="videoSource" src="@videoURI" />
-</video>
-
+    <video id="video" class="video" >
+        <source id="videoSource" src="@videoURI" />
+    </video>
+</div>
 
 @code
 {
@@ -35,20 +43,25 @@
     private VideoFile? currentVideo;
     private List<VideoFile> videoFiles = new List<VideoFile>();
     private BlobService? blobServer;
+    bool hiddenLabel = true;
     protected async override Task OnInitializedAsync()
     {
         blobServer = new BlobService(Config);
         ReadFile();
-        NewOpening();
-
-        StateHasChanged();
-        ;
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {            
+            NewOpening();
+        }
+    }
+
 
     private async Task PlayAudio(int seconds)
     {
-        await js.InvokeVoidAsync("hideVideoAndPlay", "video", "videoSource", videoURI, seconds);
-        ;
+        await js.InvokeVoidAsync("hideVideoAndPlay", "video", seconds);
     }
 
     private async Task PlayVideo()
@@ -56,11 +69,12 @@
         animeName = currentVideo.animeName;
         openingNumber = currentVideo.openingNumber;
         openingName = currentVideo.openingName;
-        await js.InvokeVoidAsync("showVideoAndPlay", "video", "videoSource", videoURI, DotNetObjectReference.Create(this));
+        hiddenLabel = false;
+        await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
     }
 
     [JSInvokable]
-    public void NewOpening()
+    public async void NewOpening()
     {
         animeName = "";
         openingNumber = "";
@@ -68,12 +82,14 @@
         videoIndex = rnd.Next(videoFiles.Count);
         currentVideo = videoFiles[videoIndex];
         videoURI = blobServer.GenerateSasToken(currentVideo.filePath);
+        hiddenLabel = true;
+        await js.InvokeVoidAsync("pauseVideo", "video");
+
         StateHasChanged();
     }
     private async void ReadFile()
     {
         string? line;
-        //StreamReader sr = new StreamReader("wwwroot/VideoText.txt");
         StreamReader sr = new StreamReader("wwwroot/VideoText.txt");
 
         //Read the first line of text

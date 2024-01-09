@@ -396,4 +396,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# these files are passwords needed when running locally.
 /SalernoProject/appsettings.Development.json
