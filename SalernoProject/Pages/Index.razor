@@ -2,7 +2,8 @@
 @using SalernoProject.Data
 @using System.IO;
 @inject IConfiguration Config
-@inject IJSRuntime js;
+@inject IJSRuntime js
+@inject BlobService BlobService
 
 <PageTitle>Anime Openings Tester</PageTitle>
 
@@ -19,11 +20,6 @@
 <h2>@openingNumber</h2>
 <h2>@openingName</h2>
 
-
-
-
-
-
 <video id="video">
     <source id="videoSource" src="@videoFile" />
 </video>
@@ -37,19 +33,24 @@
     int videoIndex = 0;
     private Random rnd = new Random();
     private VideoFile? currentVideo;
-
     private List<VideoFile> videoFiles = new List<VideoFile>();
+
     protected async override Task OnInitializedAsync()
     {
+        //defaultConnection = Config.GetConnectionString("myConnectionString") ?? "unknown";
         ReadFile();
         NewOpening();
+        var azureBlobService = new BlobService(Config);
+        videoFile = azureBlobService.GenerateSasToken("animeopeningscontainer", "bleach/bleach_1.mp4");
 
+        StateHasChanged();
+        ;
     }
 
     private async Task PlayAudio(int seconds)
     {
 
-        videoFile = currentVideo.filePath;
+        //videoFile = currentVideo.filePath;
         await js.InvokeVoidAsync("hideVideoAndPlay", "video", "videoSource", videoFile, seconds);
     }
 
