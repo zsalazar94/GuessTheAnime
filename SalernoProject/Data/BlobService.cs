@@ -11,6 +11,7 @@ namespace SalernoProject.Data
         readonly string? accountName;
         readonly string? accountKey;
         readonly string? containerName;
+
         public BlobService(IConfiguration configuration)
         {
             connectionString = configuration.GetConnectionString("storageConnectionString");
@@ -20,31 +21,34 @@ namespace SalernoProject.Data
             _blobServiceClient = new BlobServiceClient(connectionString);
         }
 
-        public string GenerateSasToken(string blobPath, int durationMinutes = 60)
+        public string GenerateSasTokenForContainer(int durationMinutes = 60)
         {
             BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
-            BlobClient blobClient = containerClient.GetBlobClient(blobPath);
 
             BlobSasBuilder sasBuilder = new BlobSasBuilder
             {
                 BlobContainerName = containerName,
-                BlobName = blobPath,
-                Resource = "b", // "b" for blob
+                Resource = "c", // "c" for container
                 StartsOn = DateTimeOffset.UtcNow,
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(durationMinutes)
             };
 
             // Specify read permissions for the SAS
-            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+            sasBuilder.SetPermissions(BlobContainerSasPermissions.List | BlobContainerSasPermissions.Read);
 
             // Build the SAS token
-            BlobUriBuilder blobUriBuilder = new BlobUriBuilder(blobClient.Uri)
-            {
-                Sas = sasBuilder.ToSasQueryParameters(new StorageSharedKeyCredential(accountName, accountKey))
-            };
+            string sasToken = sasBuilder.ToSasQueryParameters(new StorageSharedKeyCredential(accountName, accountKey)).ToString();
 
-            return blobUriBuilder.ToUri().ToString();
+            return sasToken;
         }
 
+        public string GetBlobSasUri(string blobPath, string sasToken)
+        {
+            BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+            BlobClient blobClient = containerClient.GetBlobClient(blobPath);
+
+            // Combine the blob URI with the SAS token
+            return $"{blobClient.Uri}?{sasToken}";
+        }
     }
 }

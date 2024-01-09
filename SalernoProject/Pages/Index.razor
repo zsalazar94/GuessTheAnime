@@ -43,24 +43,32 @@
     private VideoFile? currentVideo;
     private List<VideoFile> videoFiles = new List<VideoFile>();
     private BlobService? blobServer;
+    private string sasToken;
     bool hiddenLabel = true;
+    
     protected async override Task OnInitializedAsync()
     {
         blobServer = new BlobService(Config);
-        ReadFile();
+        await ReadFile();
+        sasToken = blobServer.GenerateSasTokenForContainer(); // Only one sas token is made, 
+
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {            
-            NewOpening();
+            await NewOpening();
         }
     }
 
 
     private async Task PlayAudio(int seconds)
     {
+        if (!hiddenLabel) // if the video is currently showing.
+        {
+            await NewOpening();
+        }
         await js.InvokeVoidAsync("hideVideoAndPlay", "video", seconds);
     }
 
@@ -74,20 +82,20 @@
     }
 
     [JSInvokable]
-    public async void NewOpening()
+    public async Task NewOpening()
     {
+        await js.InvokeVoidAsync("pauseVideo", "video");
         animeName = "";
         openingNumber = "";
         openingName = "";
         videoIndex = rnd.Next(videoFiles.Count);
         currentVideo = videoFiles[videoIndex];
-        videoURI = blobServer.GenerateSasToken(currentVideo.filePath);
+        videoURI = blobServer.GetBlobSasUri(currentVideo.filePath, sasToken);
         hiddenLabel = true;
-        await js.InvokeVoidAsync("pauseVideo", "video");
-
+        
         StateHasChanged();
     }
-    private async void ReadFile()
+    private async Task ReadFile()
     {
         string? line;
         StreamReader sr = new StreamReader("wwwroot/VideoText.txt");
