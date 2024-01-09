@@ -2,10 +2,10 @@
 {
     public class VideoFile
     {
-        public string filePath { get; set; } 
         public string animeName { get; set; }
         public string openingNumber { get; set;}
         public string openingName { get; set; }
+        public string filePath { get; set; }
 
         public VideoFile(string animeName, string openingNumber, string openingName, string filePath)
         {

@@ -7,24 +7,28 @@ namespace SalernoProject.Data
     public class BlobService
     {
         private readonly BlobServiceClient _blobServiceClient;
-        private readonly string AccountName = "animeopenings";
-        private readonly string AccountKey = "YnaraorSwjoQftlPYcqtLFcT4fTWlx1+zWe+H3IdbQke2iSDy1rKrpyFumTPgdVApTfin8JNBQpL+AStn63nrA==";
-
+        readonly string? connectionString;
+        readonly string? accountName;
+        readonly string? accountKey;
+        readonly string? containerName;
         public BlobService(IConfiguration configuration)
         {
-            var connectionString = configuration.GetConnectionString("myConnectionString");
+            connectionString = configuration.GetConnectionString("storageConnectionString");
+            accountName = configuration.GetConnectionString("storageAccountName");
+            accountKey = configuration.GetConnectionString("storageAccountKey");
+            containerName = configuration.GetConnectionString("containerName");
             _blobServiceClient = new BlobServiceClient(connectionString);
         }
 
-        public string GenerateSasToken(string containerName, string blobName, int durationMinutes = 60)
+        public string GenerateSasToken(string blobPath, int durationMinutes = 60)
         {
             BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
-            BlobClient blobClient = containerClient.GetBlobClient(blobName);
+            BlobClient blobClient = containerClient.GetBlobClient(blobPath);
 
             BlobSasBuilder sasBuilder = new BlobSasBuilder
             {
                 BlobContainerName = containerName,
-                BlobName = blobName,
+                BlobName = blobPath,
                 Resource = "b", // "b" for blob
                 StartsOn = DateTimeOffset.UtcNow,
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(durationMinutes)
@@ -36,7 +40,7 @@ namespace SalernoProject.Data
             // Build the SAS token
             BlobUriBuilder blobUriBuilder = new BlobUriBuilder(blobClient.Uri)
             {
-                Sas = sasBuilder.ToSasQueryParameters(new StorageSharedKeyCredential(AccountName, AccountKey))
+                Sas = sasBuilder.ToSasQueryParameters(new StorageSharedKeyCredential(accountName, accountKey))
             };
 
             return blobUriBuilder.ToUri().ToString();
