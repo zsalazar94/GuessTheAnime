@@ -15,7 +15,6 @@
 <button @onclick="PlayVideo">Reveal Answer</button>
 
 <br />
-<h2>@defaultConnection</h2>
 <h2>@animeName</h2>
 <h2>@openingNumber</h2>
 <h2>@openingName</h2>
@@ -42,7 +41,6 @@
     private List<VideoFile> videoFiles = new List<VideoFile>();
     protected async override Task OnInitializedAsync()
     {
-        defaultConnection = Config.GetConnectionString("myConnectionString") ?? "unknown";
         ReadFile();
         NewOpening();
 
