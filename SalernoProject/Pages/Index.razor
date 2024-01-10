@@ -22,7 +22,7 @@
     }
 </style>
 
-<h1>Welcome to Anime Openings Quiz! Multiplayer</h1>
+<h1>Welcome to Anime Openings Quiz! Multiplayer Players: @counter</h1>
 
 <button @onclick="NewOpening">New Opening</button>
 <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
@@ -54,6 +54,7 @@
     private string sasToken;
     bool hiddenLabel = true;
     private Participant participant;
+    private int counter = 0;
 
 
     protected override async Task OnInitializedAsync()
@@ -83,7 +84,13 @@
         roomManager.JoinRoom(roomId, participant);
 
         // Additional logic for joining the room (e.g., SignalR hub method)
-        await hubContext.Clients.Group(roomId).SendAsync("JoinRoom", participant.ConnectionId);
+        await hubContext.Clients.Group(roomId).SendAsync("JoinRoom", roomId, participant.ConnectionId);
+    }
+
+    public async Task IncreaseCounter()
+    {
+        counter++;
+        StateHasChanged();
     }
 
     private async Task LeaveRoom()
