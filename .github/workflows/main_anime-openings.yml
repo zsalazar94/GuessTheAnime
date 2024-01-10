@@ -6,7 +6,7 @@ name: Build and deploy ASP.Net Core app to Azure Web App - Anime-Openings
 on:
   push:
     branches:
-      - main
+      - MultiPlayer
   workflow_dispatch:
 
 jobs:
