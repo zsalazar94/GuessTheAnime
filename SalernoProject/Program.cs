@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<BlobService>();
+builder.Services.AddSingleton<RoomManager>();
+builder.Services.AddSignalR();
+
 
 var app = builder.Build();
 
@@ -25,7 +28,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapBlazorHub();
+    endpoints.MapHub<QuizHub>("/quizHub"); // Adjust the hub endpoint as needed
+    endpoints.MapFallbackToPage("/_Host");
+});
 
 app.Run();
