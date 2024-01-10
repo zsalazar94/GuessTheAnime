@@ -19,6 +19,11 @@ namespace SalernoProject.Data
             // Additional logic for broadcasting the participant list to the room
         }
 
-        // Additional hub methods as needed
+        public async Task PlayAudio(string roomId, int seconds)
+        {
+            // Broadcast the PlayAudio event to all clients in the group
+            await Clients.Group(roomId).SendAsync("PlayAudio", seconds);
+        }
+
     }
 }

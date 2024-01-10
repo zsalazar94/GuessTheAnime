@@ -102,6 +102,10 @@
         }
     }
 
+    private async Task PlayAudioHelper(int seconds)
+    {
+        await hubContext.Clients.Group(roomId).SendAsync("PlayAudio", roomId, seconds);
+    }
 
     private async Task PlayAudio(int seconds)
     {
