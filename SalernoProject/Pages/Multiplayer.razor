@@ -16,24 +16,28 @@
 
 @if(!inRoom)
 {
+    <h3>If someone has given you a room name enter below and hit join room!</h3>
     <input type="text" @bind="roomName" />
     <button @onclick="JoinRoom">Join Room </button>
     <br />
-    <button @onclick="CreateRoom">Create Room</button>
+    <label>Create a new room here!</label><button @onclick="CreateRoom">Create Room</button>
 }
 else
 {
     <h1>Welcome to Anime Openings Quiz!</h1>
+    <button @onclick="ChangeFilterAnime">Change Filter</button>
     <button @onclick="HideRoomName">@buttonText</button>
     <h3 hidden="@hiddenName" style="display: inline">Your Room Name is: @roomName</h3>
     <br />
 
     @if(host)
     {
+        <div style="margin-top: 5px">
         <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
         <button @onclick="() => PlayAudio(20000)">20 Seconds</button>
         <button @onclick="() => PlayAudio(30000)">30 Seconds</button>
         <button @onclick="PlayVideo">Reveal Answer</button>
+        </div>
     }
     else
     {
@@ -42,22 +46,31 @@ else
         <button hidden @onclick="() => PlayAudio(30000)">30 Seconds</button>
         <button hidden @onclick="PlayVideo">Reveal Answer</button>
     }
-    <br />
-
-    <div hidden="@selectedFilter" class="row">
-        <h3>Select Anime you wish to include.</h3>
-
-        @foreach (string anime in animeList)
+    <label>Enter your Anime Guess!</label>
+    
+    <select>
+        @foreach (string anime in selectedAnimes)
         {
-            <div class="checkbox-container">
-                <input type="checkbox" id="@anime" @bind="@checkedAnimes[anime]" />
-                <label for="@anime">@anime</label>
-            </div>
+            <option value="@anime">@anime</option>
         }
-        <div class="button-container">
-            <button @onclick="FilterAnime">Submit</button>
+    </select>
+    @if(host)
+    {        
+        <div hidden="@selectedFilter" class="row">
+            <h3>Select Anime you wish to include.</h3>
+
+            @foreach (string anime in animeList)
+            {
+                <div class="checkbox-container">
+                    <input type="checkbox" id="@anime" @bind="@checkedAnimes[anime]" />
+                    <label for="@anime">@anime</label>
+                </div>
+            }
+            <div class="button-container">
+                <button @onclick="FilterAnime">Submit</button>
+            </div>
         </div>
-    </div>
+    }
 
     <br />
     <div hidden="@hiddenLabel">
@@ -73,14 +86,14 @@ else
 {
     public bool hiddenName = true, selectedFilter = false;
     public string roomName = "", newPlayer = "";
-    private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Name";
+    private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Room Name";
     private int videoIndex = 0;
     private Random rnd = new Random();
     private VideoFile? currentVideo;
     private List<VideoFile> videoFiles = new List<VideoFile>();
     private List<VideoFile> videoFilesAll = new List<VideoFile>();
     Dictionary<string, bool> checkedAnimes = new Dictionary<string, bool>();
-
+    List<string> selectedAnimes = new List<string>();
 
     private BlobService? blobServer;
     bool hiddenLabel = true;
@@ -103,16 +116,30 @@ else
         {
             checkedAnimes[anime] = false;
         }
+        selectedAnimes = animeList;
     }
 
 
     private async Task FilterAnime()
     {
-        List<string> selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
+        if (checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).Count() > 0)
+        {
+            selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
+            await hubConnection.SendAsync("SetFilter", roomName, selectedAnimes);
 
-        selectedFilter = true;
-        videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
-        await NewOpening();
+            if (!selectedAnimes.Contains(currentVideo.animeName))
+            {                
+                await NewOpening();
+            }
+
+        }
+    }
+
+    private async Task ChangeFilterAnime()
+    {
+        videoFiles = videoFilesAll;
+
+        selectedFilter = false;
     }
 
     private async Task StartHub()
@@ -172,6 +199,16 @@ else
             hiddenLabel = false;
             await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
             await InvokeAsync(StateHasChanged);
+
+        });
+
+        hubConnection.On<List<string>>("RecieveFilter", (selectAnime) =>
+        {
+            selectedAnimes = selectAnime;
+
+            selectedFilter = true;
+            videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
+            InvokeAsync(StateHasChanged);
 
         });
 
@@ -283,6 +320,6 @@ else
     private async Task HideRoomName()
     {
         hiddenName = !hiddenName; //inverts hidden name
-        buttonText = !hiddenName ? "Hide Name" : "Show Name";
+        buttonText = !hiddenName ? "Hide Room Name" : "Show Room Name";
     }
 }

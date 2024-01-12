@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using SalernoProject.Data;
 
 namespace SalernoProject.Hubs
 {
@@ -38,6 +39,11 @@ namespace SalernoProject.Hubs
             }
         }
 
+        public async Task SetFilter(string roomName, List<string> selectedAnimes)
+        {
+            await Clients.Group(roomName).SendAsync("RecieveFilter", selectedAnimes);
+
+        }
         public async Task SendVideo(string roomName, int videoIndex)
         {
             await Clients.Group(roomName).SendAsync("RecieveVideo", videoIndex);
