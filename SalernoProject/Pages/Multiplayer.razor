@@ -7,8 +7,18 @@
 @inject BlobService BlobService
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
+<style>
+    .video {
+        max-width: 60vw;
+        max-height: 60vh;
+        width: auto;
+        height: auto;
+        display: none
+    }
+</style>
 
-<h3>Multiplayer</h3>
+<PageTitle>Anime Openings Tester</PageTitle>
+
 @if(!inRoom)
 {
     <input type="text" @bind="roomName" />
@@ -18,26 +28,25 @@
 }
 else
 {
-    <h3>Your Room Name is: @roomName</h3>
-
-    <PageTitle>Anime Openings Tester</PageTitle>
-    <style>
-        .video {
-            max-width: 60vw;
-            max-height: 60vh;
-            width: auto;
-            height: auto;
-            display: none
-        }
-    </style>
-
     <h1>Welcome to Anime Openings Quiz!</h1>
 
-    <button @onclick="NewOpening">New Opening</button>
-    <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
-    <button @onclick="() => PlayAudio(20000)">20 Seconds</button>
-    <button @onclick="() => PlayAudio(30000)">30 Seconds</button>
-    <button @onclick="PlayVideo">Reveal Answer</button>
+    <h3 hidden="@hiddenName">Your Room Name is: @roomName</h3> <button @onclick="HideRoomName">@buttonText</button>
+    @if(!host)
+    {
+        <button hidden="hidden" @onclick="NewOpening">New Opening</button>
+        <button hidden="hidden" @onclick="() => PlayAudio(10000)">10 Seconds</button>
+        <button hidden="hidden" @onclick="() => PlayAudio(20000)">20 Seconds</button>
+        <button hidden="hidden" @onclick="() => PlayAudio(30000)">30 Seconds</button>
+        <button hidden="hidden" @onclick="PlayVideo">Reveal Answer</button>
+    }
+    else
+    {
+        <button @onclick="NewOpening">New Opening</button>
+        <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
+        <button @onclick="() => PlayAudio(20000)">20 Seconds</button>
+        <button @onclick="() => PlayAudio(30000)">30 Seconds</button>
+        <button @onclick="PlayVideo">Reveal Answer</button>
+    }
 
     <br />
     <div hidden="@hiddenLabel">
@@ -51,8 +60,9 @@ else
 
 @code 
 {
+    public bool hiddenName = true;
     public string roomName = "", newPlayer = "";
-    private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken;
+    private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Name";
     private int videoIndex = 0;
     private Random rnd = new Random();
     private VideoFile? currentVideo;
@@ -72,8 +82,6 @@ else
         await ReadFile();
 
     }
-
-
 
     private async Task StartHub()
     {
@@ -131,6 +139,8 @@ else
             openingName = currentVideo.openingName;
             hiddenLabel = false;
             await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
+            await InvokeAsync(StateHasChanged);
+
         });
 
 
@@ -235,5 +245,14 @@ else
         }
         //close the file
         sr.Close();
+    }
+
+    private async Task HideRoomName()
+    {
+        hiddenName = !hiddenName; //inverts hidden name
+        buttonText = !hiddenName ? "Hide Name" : "Show Name";
+
+
+
     }
 }
