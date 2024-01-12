@@ -7,17 +7,12 @@
 @inject BlobService BlobService
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
-<style>
-    .video {
-        max-width: 60vw;
-        max-height: 60vh;
-        width: auto;
-        height: auto;
-        display: none
-    }
-</style>
-
 <PageTitle>Anime Openings Tester</PageTitle>
+
+<head>
+    <link href="css/Multiplayer.css" rel="stylesheet">
+</head>
+
 
 @if(!inRoom)
 {
@@ -29,24 +24,40 @@
 else
 {
     <h1>Welcome to Anime Openings Quiz!</h1>
+    <button @onclick="HideRoomName">@buttonText</button>
+    <h3 hidden="@hiddenName" style="display: inline">Your Room Name is: @roomName</h3>
+    <br />
 
-    <h3 hidden="@hiddenName">Your Room Name is: @roomName</h3> <button @onclick="HideRoomName">@buttonText</button>
-    @if(!host)
+    @if(host)
     {
-        <button hidden="hidden" @onclick="NewOpening">New Opening</button>
-        <button hidden="hidden" @onclick="() => PlayAudio(10000)">10 Seconds</button>
-        <button hidden="hidden" @onclick="() => PlayAudio(20000)">20 Seconds</button>
-        <button hidden="hidden" @onclick="() => PlayAudio(30000)">30 Seconds</button>
-        <button hidden="hidden" @onclick="PlayVideo">Reveal Answer</button>
-    }
-    else
-    {
-        <button @onclick="NewOpening">New Opening</button>
         <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
         <button @onclick="() => PlayAudio(20000)">20 Seconds</button>
         <button @onclick="() => PlayAudio(30000)">30 Seconds</button>
         <button @onclick="PlayVideo">Reveal Answer</button>
     }
+    else
+    {
+        <button hidden @onclick="() => PlayAudio(10000)">10 Seconds</button>
+        <button hidden @onclick="() => PlayAudio(20000)">20 Seconds</button>
+        <button hidden @onclick="() => PlayAudio(30000)">30 Seconds</button>
+        <button hidden @onclick="PlayVideo">Reveal Answer</button>
+    }
+    <br />
+
+    <div hidden="@selectedFilter" class="row">
+        <h3>Select Anime you wish to include.</h3>
+
+        @foreach (string anime in animeList)
+        {
+            <div class="checkbox-container">
+                <input type="checkbox" id="@anime" @bind="@checkedAnimes[anime]" />
+                <label for="@anime">@anime</label>
+            </div>
+        }
+        <div class="button-container">
+            <button @onclick="FilterAnime">Submit</button>
+        </div>
+    </div>
 
     <br />
     <div hidden="@hiddenLabel">
@@ -60,15 +71,21 @@ else
 
 @code 
 {
-    public bool hiddenName = true;
+    public bool hiddenName = true, selectedFilter = false;
     public string roomName = "", newPlayer = "";
     private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Name";
     private int videoIndex = 0;
     private Random rnd = new Random();
     private VideoFile? currentVideo;
     private List<VideoFile> videoFiles = new List<VideoFile>();
+    private List<VideoFile> videoFilesAll = new List<VideoFile>();
+    Dictionary<string, bool> checkedAnimes = new Dictionary<string, bool>();
+
+
     private BlobService? blobServer;
     bool hiddenLabel = true;
+    List<string> animeList = new List<string>();
+
 
     public bool host = false, inRoom = false;
     private HubConnection? hubConnection;
@@ -81,6 +98,21 @@ else
         sasToken = blobServer.GenerateSasTokenForContainer();
         await ReadFile();
 
+        animeList = videoFiles.Select(x => x.animeName).Distinct().ToList();
+        foreach (var anime in animeList)
+        {
+            checkedAnimes[anime] = false;
+        }
+    }
+
+
+    private async Task FilterAnime()
+    {
+        List<string> selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
+
+        selectedFilter = true;
+        videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
+        await NewOpening();
     }
 
     private async Task StartHub()
@@ -243,6 +275,7 @@ else
             //Read the next line
             line = sr.ReadLine();
         }
+        videoFilesAll = videoFiles;
         //close the file
         sr.Close();
     }
@@ -251,8 +284,5 @@ else
     {
         hiddenName = !hiddenName; //inverts hidden name
         buttonText = !hiddenName ? "Hide Name" : "Show Name";
-
-
-
     }
 }
