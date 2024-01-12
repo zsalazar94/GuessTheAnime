@@ -40,6 +40,8 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.MapHub<ChatHub>("/chathub");
+app.MapHub<AnimeHub>("/animehub");
+
 
 
 app.Run();

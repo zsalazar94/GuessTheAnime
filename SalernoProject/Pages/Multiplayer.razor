@@ -1,0 +1,86 @@
+﻿@page "/Multiplayer"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+
+<h3>Multiplayer</h3>
+@if(!inRoom)
+{
+    <input type="text" @bind="roomName" />
+    <button @onclick="JoinRoom">Join Room </button>
+    <br />
+    <button @onclick="CreateRoom">Create Room</button>
+}
+else
+{
+    <h3>Your Room Name is: @roomName</h3>
+
+    <label>player: @newPlayer</label>
+}
+
+@code 
+{
+    public string roomName = "", newPlayer = "";
+    public bool host = false, inRoom = false;
+    private HubConnection? hubConnection;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/animehub"))
+            .Build();
+
+        hubConnection.On("RoomCreated", () =>
+       {
+           InvokeAsync(StateHasChanged);
+       });
+
+        hubConnection.On("PlayerJoined", () =>
+        {
+            newPlayer = "new player has joined";
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("RoomNotFound", () =>
+        {
+            inRoom = false;
+            InvokeAsync(StateHasChanged);
+        });
+
+
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task CreateRoom()
+    {
+        if (hubConnection is not null)
+        {
+            host = true;
+            inRoom = true;
+            Guid guid = Guid.NewGuid();
+            roomName = Convert.ToBase64String(guid.ToByteArray())
+                .Replace("/", "")
+                .Replace("+", "")
+                .Substring(0, 8);
+            await hubConnection.SendAsync("CreateRoom", roomName);
+        }
+    }
+
+    public async Task JoinRoom()
+    {
+        if (hubConnection is not null)
+        {
+            host = false;
+            inRoom = true;
+            Guid guid = Guid.NewGuid();
+            await hubConnection.SendAsync("JoinRoom", roomName);
+        }
+        else
+        {
+            roomName = "";
+            host = false;
+            inRoom = false;
+        }
+    }
+}
