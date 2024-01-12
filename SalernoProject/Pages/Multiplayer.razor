@@ -37,7 +37,7 @@ else
     <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
     <button @onclick="() => PlayAudio(20000)">20 Seconds</button>
     <button @onclick="() => PlayAudio(30000)">30 Seconds</button>
-    //<button @onclick="PlayVideo">Reveal Answer</button>
+    <button @onclick="PlayVideo">Reveal Answer</button>
 
     <br />
     <div hidden="@hiddenLabel">
@@ -87,10 +87,11 @@ else
            await InvokeAsync(StateHasChanged);
        });
 
-        hubConnection.On("PlayerJoined", () =>
+        hubConnection.On("PlayerJoined", async() =>
         {
+            await PlayerJoinedSendOpening();
             newPlayer = "new player has joined";
-            InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On("RoomNotFound", () =>
