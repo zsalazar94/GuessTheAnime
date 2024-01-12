@@ -50,6 +50,12 @@ namespace SalernoProject.Hubs
 
         }
 
+        public async Task PlayVideo(string roomName)
+        {
+            await Clients.Group(roomName).SendAsync("PlayVideo");
+
+        }
+
         public override async Task OnDisconnectedAsync(Exception exception)
         {
             // Identify the room the disconnected player belongs to

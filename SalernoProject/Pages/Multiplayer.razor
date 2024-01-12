@@ -73,6 +73,8 @@ else
 
     }
 
+
+
     private async Task StartHub()
     {
         hubConnection = new HubConnectionBuilder()
@@ -119,6 +121,15 @@ else
         {
             await js.InvokeVoidAsync("hideVideoAndPlay", "video", seconds);
 
+        });
+
+        hubConnection.On("PlayVideo", async () =>
+        {
+            animeName = currentVideo.animeName;
+            openingNumber = currentVideo.openingNumber;
+            openingName = currentVideo.openingName;
+            hiddenLabel = false;
+            await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
         });
 
 
@@ -175,6 +186,12 @@ else
             await NewOpening();
         }
         await hubConnection.SendAsync("PlayAudio", roomName, seconds);
+
+    }
+
+    private async Task PlayVideo()
+    {
+        await hubConnection.SendAsync("PlayVideo", roomName);
 
     }
 
