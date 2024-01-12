@@ -11,6 +11,8 @@ namespace SalernoProject.Hubs
             // Create a new room
             rooms[roomName] = new List<string> { Context.ConnectionId };
 
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
+
             // Notify the client who created the room
             await Clients.Caller.SendAsync("RoomCreated");
         }
@@ -35,6 +37,39 @@ namespace SalernoProject.Hubs
                 await Clients.Caller.SendAsync("RoomNotFound");
             }
         }
+
+        public async Task SendVideo(string roomName, int videoIndex)
+        {
+            await Clients.Group(roomName).SendAsync("RecieveVideo", videoIndex);
+
+        }
+
+        public async Task PlayAudio(string roomName, int seconds)
+        {
+            await Clients.Group(roomName).SendAsync("PlayAudio", seconds);
+
+        }
+
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            // Identify the room the disconnected player belongs to
+            var room = rooms.FirstOrDefault(pair => pair.Value.Contains(Context.ConnectionId));
+
+            if (room.Key != null)
+            {
+                // Remove the player from the room
+                rooms[room.Key].Remove(Context.ConnectionId);
+
+                // Notify remaining players in the room about the player leaving
+                await Clients.Group(room.Key).SendAsync("PlayerLeft");
+
+                // Remove the player from the SignalR group
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Key);
+            }
+
+            await base.OnDisconnectedAsync(exception);
+        }
+
         public async Task SendMessage(string user, string message)
         {
             await Clients.All.SendAsync("ReceiveMessage", user, message);
