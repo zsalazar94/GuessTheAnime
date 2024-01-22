@@ -41,7 +41,10 @@ else
     <div class="main-container">
     <div class="content-container">
     <h1>Welcome to Anime Openings Quiz!</h1>
-    <button @onclick="ChangeFilterAnime">Change Filter</button>
+    @if(host)
+    {
+        <button @onclick="ChangeFilterAnime">Change Filter</button>
+    }
     <button @onclick="HideRoomName">@buttonText</button>
     <h3 hidden="@hiddenName" style="display: inline">Your Room Name is: @roomName</h3>
 
@@ -187,6 +190,7 @@ else
 
         hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
         {
+            await FilterAnime(); // send filters to everyone since new player joined
             await PlayerJoinedSendOpening();
             newPlayer = "new player has joined";
             scoreDict.Add(joiningUserName, 0);
