@@ -190,7 +190,10 @@ else
 
         hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
         {
-            await FilterAnime(); // send filters to everyone since new player joined
+            if (host)
+            {                
+                await FilterAnime(); // send filters to everyone since new player joined
+            }
             await PlayerJoinedSendOpening();
             newPlayer = "new player has joined";
             scoreDict.Add(joiningUserName, 0);
