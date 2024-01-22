@@ -1,56 +1,145 @@
-﻿.main-container {
+﻿/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #ffffff;
+}
+
+/* Main Container */
+.main-container {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1.25em; 
 }
 
-.content-container {
-    flex-grow: 1; /* Allows the content to fill the space */
-    /* Additional styling for your content */
+/* Content and Scoreboard Containers */
+.content-container, .scoreboard-container {
+    margin: 0.625em;
+    padding: 1.25em;
+    background-color: #1e1e1e;
+    border-radius: 0.5em;
+    box-shadow: 0 0.125em 0.3125em rgba(255, 255, 255, 0.1);
 }
 
-.scoreboard-container {
-    flex-basis: 25%; /* Adjust based on your layout */
-    max-height: 100vh; /* Adjust if needed */
-    overflow-y: auto; /* Allows scrolling if the list is long */
-    padding: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Optional for visibility */
-    border-radius: 5px; /* Optional for rounded corners */
-    /* Remove the 'position: absolute' and related properties */
-}
-
-body 
-{
-}
+/* Video Styling */
 .video {
-    max-width: 60vw;
-    max-height: 60vh;
-    width: auto;
+    width: 80%;
     height: auto;
-    display: none
+    border-radius: 0.5em;
+    margin-top: 1.25em;
 }
+
+/* Buttons and Inputs */
+button, select, input {
+    padding: 0.5em 0.75em;
+    border: 1px solid #333;
+    border-radius: 0.25em;
+    margin-top: 0.625em;
+    background-color: #333;
+    color: #fff;
+}
+
+    button:focus, select:focus, input:focus {
+        outline: 2px solid #4CAF50;
+    }
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+input[type="text"], select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Scoreboard */
+.scoreboard-container {
+    flex-basis: 30%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+ul.score-list {
+    list-style: none;
+    padding: 0;
+}
+
+/* Checkbox and Button Grid */
 .row {
     display: flex;
     flex-wrap: wrap;
-    width: 60%;
-    border: solid 1px black;
-    margin-top: 5px;
+    gap: 10px;
 }
 
 .checkbox-container {
-    flex: 0 0 50%; /* Each checkbox container takes up 50% of the row */
-    box-sizing: border-box;
-    padding: 10px; /* Adjust padding as needed */
+    flex: 1 1 45%;
 }
 
 .button-container {
-    flex: 0 0 100%; /* Takes up the full width of the row */
-    display: flex; /* Enables Flexbox */
-    justify-content: center; /* Centers horizontally */
-    align-items: center; /* Centers vertically */
-    padding: 10px; /* Optional padding */
+    display: flex;
+    justify-content: center;
 }
 
     .button-container button {
-        width: 50%; /* Set the width of the button */
-        /* Removed 'display: flex' as it's not necessary for the button itself */
+        width: 50%;
     }
+
+/* Specific Class Styles */
+.input-field {
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 10px;
+    width: 100%;
+    background-color: #333;
+    color: #fff;
+}
+
+.action-button {
+    background-color: #008cba;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+    .action-button:hover {
+        background-color: #005f73;
+    }
+
+.audio-controls, .video-section, .filter-section {
+    margin-top: 15px;
+}
+
+.time-button, .reveal-button, .filter-button {
+    background-color: #ff5722;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+    .time-button:hover, .reveal-button:hover, .filter-button:hover {
+        background-color: #e64a19;
+    }
+
+/* Media Queries */
+@media (min-width: 48em) {
+    .main-container {
+        flex-direction: row;
+    }
+}
