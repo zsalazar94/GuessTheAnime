@@ -44,6 +44,11 @@ namespace SalernoProject.Hubs
             await Clients.Group(roomName).SendAsync("RecieveFilter", selectedAnimes);
 
         }
+        public async Task SendMessage(string roomName, ChatMessage message)
+        {
+            await Clients.Group(roomName).SendAsync("RecieveMessage", message);
+        }
+
         public async Task SendVideo(string roomName, int videoIndex)
         {
             await Clients.Group(roomName).SendAsync("RecieveVideo", videoIndex);
@@ -80,11 +85,6 @@ namespace SalernoProject.Hubs
             }
 
             await base.OnDisconnectedAsync(exception);
-        }
-
-        public async Task SendMessage(string user, string message)
-        {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
         }
 
         public async Task SendScoreboard(string roomName, Dictionary<string, int> scoreboard)

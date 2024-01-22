@@ -10,27 +10,121 @@ body {
 /* Main Container */
 .main-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
-    align-items: center;
-    padding: 1.25em; 
+    align-items: start;
+    padding: 1.25em;
 }
 
 /* Content and Scoreboard Containers */
-.content-container, .scoreboard-container {
+.content-container {
     margin: 0.625em;
     padding: 1.25em;
     background-color: #1e1e1e;
     border-radius: 0.5em;
     box-shadow: 0 0.125em 0.3125em rgba(255, 255, 255, 0.1);
+    flex-grow: 1; /* Allows the container to grow to fill available space */
+}
+
+/* Media and Chat Container */
+.media-chat-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Video Section */
+.video-section {
+    width: 80%; /* Takes up 80% of the container */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: auto; /* Adjust height as needed */
+    border: 2px solid #4CAF50;
+    padding: 10px;
+}
+
+    /* Hidden State for Video Section */
+    .video-section.is-hidden {
+        visibility: hidden;
+        width: 1280px;
+        height: 720px;
+    }
+
+/* Chat Section */
+.chat-section {
+    width: 20%; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid #4CAF50; 
+    padding: 10px; 
+    max-height: 500px; /* Maximum height of the chat box */
+    overflow-y: auto; /* Enables vertical scrolling */
+}
+
+/* Chat messages list */
+#messagesList {
+    width: 100%;
+    overflow-y: auto; /* Allows scrolling inside the message list */
+    flex-grow: 1; /* Allows the message list to grow and fill available space */
+    margin-bottom: 10px; /* Spacing between messages and input area */
+}
+
+/* Chat Input Container */
+.chat-input-container {
+    display: flex;
+    width: 100%;
+    align-items: center;
+}
+
+/* Chat Input */
+.chat-input {
+    flex-grow: 1; /* Allows the input to grow and fill available space */
+    padding: 8px;
+    margin-right: 5px; /* Spacing between input field and button */
+    border: 1px solid #555;
+    border-radius: 4px;
+}
+
+/* Send Button */
+.send-button {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    .send-button:hover {
+        background-color: #45a049;
+    }
+
+
+/* Adjustments for when the video is not visible */
+.video-section.hidden {
+    visibility: hidden; /* Hide but maintain space */
 }
 
 /* Video Styling */
 .video {
-    width: 80%;
+    width: 100%;
     height: auto;
     border-radius: 0.5em;
     margin-top: 1.25em;
+}
+
+/* Scoreboard */
+.scoreboard-container {
+    flex-basis: 20%; 
+    margin: 0.625em;
+    padding: 1.25em;
+    background-color: #1e1e1e;
+    border-radius: 0.5em;
+    box-shadow: 0 0.125em 0.3125em rgba(255, 255, 255, 0.1);
+    align-self: start; /* Aligns this container to the top */
 }
 
 /* Buttons and Inputs */
@@ -137,9 +231,13 @@ ul.score-list {
         background-color: #e64a19;
     }
 
-/* Media Queries */
-@media (min-width: 48em) {
-    .main-container {
-        flex-direction: row;
+/* Adjustments for mobile responsiveness */
+@media (max-width: 768px) {
+    .media-chat-container {
+        flex-direction: column;
+    }
+
+    .video-section, .chat-section {
+        width: 100%;
     }
 }

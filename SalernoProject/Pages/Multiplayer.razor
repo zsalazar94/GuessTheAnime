@@ -99,22 +99,32 @@ else
             }
 
             <!-- Video and Anime Info -->
-            <div hidden="@hiddenLabel" class="video-section">
-                <h2>@animeName - @openingNumber - @openingName</h2>
-                <video id="video" class="video">
-                    <source id="videoSource" src="@videoURI" />
-                </video>
-            </div>
+            <div class="media-chat-container">
 
-            <!-- Chat room Container-->
-            <div class="chat-section">
-                <h2>Chat</h2>
-                <ul id="messagesList">
-                    @foreach (var message in messages)
-                    {
-                        <li>@message</li>
-                    }
-                </ul>
+                <div class="video-section @(hiddenLabel ? "is-hidden" : "")">
+                    <h2>@animeName - @openingNumber - @openingName</h2>
+                    <video id="video" class="video">
+                        <source id="videoSource" src="@videoURI" />
+                    </video>
+                </div>
+
+                <!-- Chat room Container -->
+                <div class="chat-section">
+                    <h2>Chat</h2>
+                    <ul id="messagesList">
+                        @foreach (ChatMessage message in messages)
+                        {
+                            <li>
+                                <span style="color: @message.userColor;">@message.username</span> : @message.message
+                            </li>
+                        }
+                    </ul>
+                    <!-- Input new messages -->
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" placeholder="Type a message..." @bind=newMessage/>
+                        <button class="send-button" @onclick=sendChatMessage>Send</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -139,11 +149,11 @@ else
     public string roomName = "", userName = ""; // names of the room we are in and what we chose as our username
     private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken = "", roomNameButtonText = "Show Room Name";
     private int videoIndex = 0;
-    
+
     private Random rnd = new Random();
-    
-    private List<string> messages = new List<string>(); // List of messages that have been sent in the chat feature.
-    
+
+    private List<ChatMessage> messages = new List<ChatMessage>(); // List of messages that have been sent in the chat feature.
+    private string newMessage = "";
     private List<VideoFile> videoFilesAll = new List<VideoFile>(); // list of all video files
     private List<VideoFile> videoFiles = new List<VideoFile>(); // list of video files we can select based on filters
     private VideoFile? currentVideo; // what video is currently being shown
@@ -194,6 +204,12 @@ else
         }
     }
 
+    private async Task sendChatMessage()
+    {
+        ChatMessage myMessage = new ChatMessage(newMessage, userName);
+        await hubConnection.SendAsync("SendMessage", roomName, myMessage);
+    }
+
     private async Task ChangeFilterAnime()
     {
         videoFiles = videoFilesAll;
@@ -204,28 +220,28 @@ else
     private async Task StartHub()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/animehub"))
-            .Build();
+        .WithUrl(Navigation.ToAbsoluteUri("/animehub"))
+        .Build();
 
-        //these are the methods to be called when AnimeHub needs to make a method call.
-        hubConnection.On("RoomCreated", async() =>
+       //these are the methods to be called when AnimeHub needs to make a method call.
+       hubConnection.On("RoomCreated", async() =>
        {
            await InvokeAsync(StateHasChanged);
        });
-
-        hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
-        {
-            if (host)
-            {                
-                await FilterAnime(); // send filters to everyone since new player joined
-            }
-            await PlayerJoinedSendOpening();
-            scoreDict.Add(joiningUserName, 0);
-            if (host)
-            {
-                await hubConnection.SendAsync("SendScoreboard", roomName, scoreDict);
-            }
-            await InvokeAsync(StateHasChanged);
+       
+       hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
+       {
+           if (host)
+           {                
+               await FilterAnime(); // send filters to everyone since new player joined
+           }
+           await PlayerJoinedSendOpening();
+           scoreDict.Add(joiningUserName, 0);
+           if (host)
+           {
+               await hubConnection.SendAsync("SendScoreboard", roomName, scoreDict);
+           }
+           await InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On<string>("IncreaseScore", async (usernameToIncrease) =>
@@ -281,9 +297,7 @@ else
             }
             await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
             await InvokeAsync(StateHasChanged);
-
         });
-
 
         hubConnection.On<List<string>>("RecieveFilter", (selectAnime) =>
         {
@@ -292,15 +306,17 @@ else
             selectedFilter = true;
             videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
             InvokeAsync(StateHasChanged);
-
         });
 
-
-
-
+        hubConnection.On<ChatMessage>("RecieveMessage", async (incomingMessage) =>
+        {
+            messages.Add(incomingMessage);
+            await InvokeAsync(StateHasChanged);
+        });
 
         await hubConnection.StartAsync();
     }
+
 
     private async Task CreateRoom()
     {
@@ -317,9 +333,9 @@ else
                 .Substring(0, 8);
             await hubConnection.SendAsync("CreateRoom", roomName);
             await NewOpening();
-
         }
     }
+
 
     public async Task JoinRoom()
     {
@@ -346,6 +362,7 @@ else
         }
     }
 
+
     private async Task PlayAudio(int seconds)
     {
         if (!hiddenLabel) // if the video is currently showing.
@@ -353,14 +370,14 @@ else
             await NewOpening();
         }
         await hubConnection.SendAsync("PlayAudio", roomName, seconds);
-
     }
+
 
     private async Task PlayVideo()
     {
         await hubConnection.SendAsync("PlayVideo", roomName);
-
     }
+
 
     [JSInvokable]
     public async Task NewOpening()
@@ -372,6 +389,7 @@ else
         }
     }
 
+
     public async Task PlayerJoinedSendOpening()
     {
         if (host && hubConnection is not null)
@@ -379,6 +397,7 @@ else
             await hubConnection.SendAsync("SendVideo", roomName, videoIndex);
         }
     }
+
 
     private async Task ReadFile()
     {
@@ -403,6 +422,7 @@ else
         //close the file
         sr.Close();
     }
+
 
     private async Task HideRoomName()
     {
