@@ -18,7 +18,7 @@ namespace SalernoProject.Hubs
             await Clients.Caller.SendAsync("RoomCreated");
         }
 
-        public async Task JoinRoom(string roomName)
+        public async Task JoinRoom(string roomName, string userName)
         {
             // Check if the room exists
             if (rooms.ContainsKey(roomName))
@@ -26,11 +26,11 @@ namespace SalernoProject.Hubs
                 // Add the player to the room
                 rooms[roomName].Add(Context.ConnectionId);
 
-                // Notify only the clients in the specific room about the new player
-                await Clients.Group(roomName).SendAsync("PlayerJoined");
-
                 // Add the player to the SignalR group for further targeted communication
                 await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
+
+                // Notify only the clients in the specific room about the new player
+                await Clients.Group(roomName).SendAsync("PlayerJoined", userName);
             }
             else
             {
@@ -86,5 +86,12 @@ namespace SalernoProject.Hubs
         {
             await Clients.All.SendAsync("ReceiveMessage", user, message);
         }
+
+        public async Task SendScoreboard(string roomName, Dictionary<string, int> scoreboard)
+        {
+
+            await Clients.Group(roomName).SendAsync("ScoreboardSend", scoreboard);
+        }
+
     }
 }

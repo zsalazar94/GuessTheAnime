@@ -183,10 +183,21 @@ else
            await InvokeAsync(StateHasChanged);
        });
 
-        hubConnection.On("PlayerJoined", async() =>
+        hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
         {
             await PlayerJoinedSendOpening();
             newPlayer = "new player has joined";
+            scoreDict.Add(joiningUserName, 0);
+            if (host)
+            {
+                await hubConnection.SendAsync("SendScoreboard", roomName, scoreDict);
+            }
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<Dictionary<string,int>>("ScoreboardSend", async (scores) =>
+        {
+            scoreDict = scores;
             await InvokeAsync(StateHasChanged);
         });
 
@@ -243,6 +254,8 @@ else
 
 
 
+
+
         await hubConnection.StartAsync();
     }
 
@@ -254,6 +267,7 @@ else
             host = true;
             inRoom = true;
             Guid guid = Guid.NewGuid();
+            scoreDict.Add(userName, 0);
             roomName = Convert.ToBase64String(guid.ToByteArray())
                 .Replace("/", "")
                 .Replace("+", "")
@@ -271,7 +285,7 @@ else
             host = false;
             inRoom = true;
             Guid guid = Guid.NewGuid();
-            await hubConnection.SendAsync("JoinRoom", roomName);
+            await hubConnection.SendAsync("JoinRoom", roomName, userName);
         }
         else
         {
@@ -279,6 +293,7 @@ else
             inRoom = false;
         }
     }
+
 
     public async ValueTask DisposeAsync()
     {
