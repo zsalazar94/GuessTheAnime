@@ -1,4 +1,24 @@
-﻿body 
+﻿.main-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.content-container {
+    flex-grow: 1; /* Allows the content to fill the space */
+    /* Additional styling for your content */
+}
+
+.scoreboard-container {
+    flex-basis: 25%; /* Adjust based on your layout */
+    max-height: 100vh; /* Adjust if needed */
+    overflow-y: auto; /* Allows scrolling if the list is long */
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Optional for visibility */
+    border-radius: 5px; /* Optional for rounded corners */
+    /* Remove the 'position: absolute' and related properties */
+}
+
+body 
 {
 }
 .video {

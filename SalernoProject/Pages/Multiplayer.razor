@@ -14,20 +14,37 @@
 </head>
 
 
-@if(!inRoom)
+@if (!inRoom)
 {
     <h3>If someone has given you a room name enter below and hit join room!</h3>
+    <label>Enter Display Name</label>
+    <input type="text" @bind="userName" />
+    <br />
+    <br />
+    <br />
+    <label>Join an existing room!</label>
+    <br />
+    <label><b>Room code</b></label>
+    <br />
     <input type="text" @bind="roomName" />
     <button @onclick="JoinRoom">Join Room </button>
     <br />
-    <label>Create a new room here!</label><button @onclick="CreateRoom">Create Room</button>
+    <br />
+    <label>OR</label>
+    <br />
+    <br />
+    <label>Create a new room here!</label>
+    <button @onclick="CreateRoom">Create Room</button>
 }
 else
 {
+    <div class="main-container">
+    <div class="content-container">
     <h1>Welcome to Anime Openings Quiz!</h1>
     <button @onclick="ChangeFilterAnime">Change Filter</button>
     <button @onclick="HideRoomName">@buttonText</button>
     <h3 hidden="@hiddenName" style="display: inline">Your Room Name is: @roomName</h3>
+
     <br />
 
     @if(host)
@@ -80,12 +97,23 @@ else
             <source id="videoSource" src="@videoURI" />
         </video>
     </div>
+    </div>
+        <div class="scoreboard-container">
+            <h3>Scoreboard</h3>
+            <ul>
+                @foreach (var item in scoreDict)
+                {
+                    <li>@item.Key: @item.Value</li>
+                }
+            </ul>
+        </div>
+   </div>
 }
 
 @code 
 {
     public bool hiddenName = true, selectedFilter = false;
-    public string roomName = "", newPlayer = "";
+    public string roomName = "", newPlayer = "", userName = "";
     private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Room Name";
     private int videoIndex = 0;
     private Random rnd = new Random();
@@ -93,6 +121,7 @@ else
     private List<VideoFile> videoFiles = new List<VideoFile>();
     private List<VideoFile> videoFilesAll = new List<VideoFile>();
     Dictionary<string, bool> checkedAnimes = new Dictionary<string, bool>();
+    Dictionary<string, int> scoreDict = new Dictionary<string, int>();
     List<string> selectedAnimes = new List<string>();
 
     private BlobService? blobServer;
@@ -219,8 +248,9 @@ else
 
     private async Task CreateRoom()
     {
-        if (hubConnection is not null)
+        if (hubConnection is not null && userName != "")
         {
+
             host = true;
             inRoom = true;
             Guid guid = Guid.NewGuid();
@@ -236,7 +266,7 @@ else
 
     public async Task JoinRoom()
     {
-        if (hubConnection is not null)
+        if (hubConnection is not null && userName != "")
         {
             host = false;
             inRoom = true;
@@ -245,7 +275,6 @@ else
         }
         else
         {
-            roomName = "";
             host = false;
             inRoom = false;
         }
