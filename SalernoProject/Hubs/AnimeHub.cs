@@ -93,5 +93,9 @@ namespace SalernoProject.Hubs
             await Clients.Group(roomName).SendAsync("ScoreboardSend", scoreboard);
         }
 
+        public async Task SendCorrectNames(string roomName, string username)
+        {
+            await Clients.Group(roomName).SendAsync("IncreaseScore", username);
+        }
     }
 }

@@ -65,7 +65,8 @@ else
     }
     <label>Enter your Anime Guess!</label>
     
-    <select>
+    <select @bind="animeGuess">
+        <option value=""></option>
         @foreach (string anime in selectedAnimes)
         {
             <option value="@anime">@anime</option>
@@ -112,6 +113,7 @@ else
 
 @code 
 {
+    public string animeGuess = "";
     public bool hiddenName = true, selectedFilter = false;
     public string roomName = "", newPlayer = "", userName = "";
     private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Room Name";
@@ -195,6 +197,12 @@ else
             await InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<string>("IncreaseScore", async (usernameToIncrease) =>
+        {
+            scoreDict[usernameToIncrease] += 1;
+            await InvokeAsync(StateHasChanged);
+        });
+
         hubConnection.On<Dictionary<string,int>>("ScoreboardSend", async (scores) =>
         {
             scoreDict = scores;
@@ -237,10 +245,15 @@ else
             openingNumber = currentVideo.openingNumber;
             openingName = currentVideo.openingName;
             hiddenLabel = false;
+            if (animeGuess == animeName) // if we got the answer correct
+            {
+                await hubConnection.SendAsync("SendCorrectNames", roomName, userName);
+            }
             await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
             await InvokeAsync(StateHasChanged);
 
         });
+
 
         hubConnection.On<List<string>>("RecieveFilter", (selectAnime) =>
         {
