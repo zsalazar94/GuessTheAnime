@@ -1,0 +1,325 @@
+﻿@page "/Multiplayer"
+@using Microsoft.AspNetCore.SignalR.Client
+@using SalernoProject.Data
+@using System.IO;
+@inject IConfiguration Config
+@inject IJSRuntime js
+@inject BlobService BlobService
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+<PageTitle>Anime Openings Tester</PageTitle>
+
+<head>
+    <link href="css/Multiplayer.css" rel="stylesheet">
+</head>
+
+
+@if(!inRoom)
+{
+    <h3>If someone has given you a room name enter below and hit join room!</h3>
+    <input type="text" @bind="roomName" />
+    <button @onclick="JoinRoom">Join Room </button>
+    <br />
+    <label>Create a new room here!</label><button @onclick="CreateRoom">Create Room</button>
+}
+else
+{
+    <h1>Welcome to Anime Openings Quiz!</h1>
+    <button @onclick="ChangeFilterAnime">Change Filter</button>
+    <button @onclick="HideRoomName">@buttonText</button>
+    <h3 hidden="@hiddenName" style="display: inline">Your Room Name is: @roomName</h3>
+    <br />
+
+    @if(host)
+    {
+        <div style="margin-top: 5px">
+        <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
+        <button @onclick="() => PlayAudio(20000)">20 Seconds</button>
+        <button @onclick="() => PlayAudio(30000)">30 Seconds</button>
+        <button @onclick="PlayVideo">Reveal Answer</button>
+        </div>
+    }
+    else
+    {
+        <button hidden @onclick="() => PlayAudio(10000)">10 Seconds</button>
+        <button hidden @onclick="() => PlayAudio(20000)">20 Seconds</button>
+        <button hidden @onclick="() => PlayAudio(30000)">30 Seconds</button>
+        <button hidden @onclick="PlayVideo">Reveal Answer</button>
+    }
+    <label>Enter your Anime Guess!</label>
+    
+    <select>
+        @foreach (string anime in selectedAnimes)
+        {
+            <option value="@anime">@anime</option>
+        }
+    </select>
+    @if(host)
+    {        
+        <div hidden="@selectedFilter" class="row">
+            <h3>Select Anime you wish to include.</h3>
+
+            @foreach (string anime in animeList)
+            {
+                <div class="checkbox-container">
+                    <input type="checkbox" id="@anime" @bind="@checkedAnimes[anime]" />
+                    <label for="@anime">@anime</label>
+                </div>
+            }
+            <div class="button-container">
+                <button @onclick="FilterAnime">Submit</button>
+            </div>
+        </div>
+    }
+
+    <br />
+    <div hidden="@hiddenLabel">
+        <h2>@animeName - @openingNumber - @openingName</h2>
+
+        <video id="video" class="video">
+            <source id="videoSource" src="@videoURI" />
+        </video>
+    </div>
+}
+
+@code 
+{
+    public bool hiddenName = true, selectedFilter = false;
+    public string roomName = "", newPlayer = "";
+    private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Room Name";
+    private int videoIndex = 0;
+    private Random rnd = new Random();
+    private VideoFile? currentVideo;
+    private List<VideoFile> videoFiles = new List<VideoFile>();
+    private List<VideoFile> videoFilesAll = new List<VideoFile>();
+    Dictionary<string, bool> checkedAnimes = new Dictionary<string, bool>();
+    List<string> selectedAnimes = new List<string>();
+
+    private BlobService? blobServer;
+    bool hiddenLabel = true;
+    List<string> animeList = new List<string>();
+
+
+    public bool host = false, inRoom = false;
+    private HubConnection? hubConnection;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await StartHub();
+        blobServer = new BlobService(Config);
+        sasToken = blobServer.GenerateSasTokenForContainer();
+        await ReadFile();
+
+        animeList = videoFiles.Select(x => x.animeName).Distinct().ToList();
+        foreach (var anime in animeList)
+        {
+            checkedAnimes[anime] = false;
+        }
+        selectedAnimes = animeList;
+    }
+
+
+    private async Task FilterAnime()
+    {
+        if (checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).Count() > 0)
+        {
+            selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
+            await hubConnection.SendAsync("SetFilter", roomName, selectedAnimes);
+
+            if (!selectedAnimes.Contains(currentVideo.animeName))
+            {                
+                await NewOpening();
+            }
+
+        }
+    }
+
+    private async Task ChangeFilterAnime()
+    {
+        videoFiles = videoFilesAll;
+
+        selectedFilter = false;
+    }
+
+    private async Task StartHub()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/animehub"))
+            .Build();
+
+        //these are the methods to be called when AnimeHub needs to make a method call.
+        hubConnection.On("RoomCreated", async() =>
+       {
+           await InvokeAsync(StateHasChanged);
+       });
+
+        hubConnection.On("PlayerJoined", async() =>
+        {
+            await PlayerJoinedSendOpening();
+            newPlayer = "new player has joined";
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("RoomNotFound", () =>
+        {
+            inRoom = false;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("PlayerLeft", () =>
+        {
+            newPlayer = "Player has left";
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<int>("RecieveVideo", async(videoIndexReturn) =>
+        {
+            await js.InvokeVoidAsync("pauseVideo", "video");
+            animeName = "";
+            openingNumber = "";
+            openingName = "";
+            currentVideo = videoFiles[videoIndexReturn];
+            videoURI = blobServer.GetBlobSasUri(currentVideo.filePath, sasToken);
+            hiddenLabel = true;
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<int>("PlayAudio", async (seconds) =>
+        {
+            await js.InvokeVoidAsync("hideVideoAndPlay", "video", seconds);
+
+        });
+
+        hubConnection.On("PlayVideo", async () =>
+        {
+            animeName = currentVideo.animeName;
+            openingNumber = currentVideo.openingNumber;
+            openingName = currentVideo.openingName;
+            hiddenLabel = false;
+            await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
+            await InvokeAsync(StateHasChanged);
+
+        });
+
+        hubConnection.On<List<string>>("RecieveFilter", (selectAnime) =>
+        {
+            selectedAnimes = selectAnime;
+
+            selectedFilter = true;
+            videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
+            InvokeAsync(StateHasChanged);
+
+        });
+
+
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task CreateRoom()
+    {
+        if (hubConnection is not null)
+        {
+            host = true;
+            inRoom = true;
+            Guid guid = Guid.NewGuid();
+            roomName = Convert.ToBase64String(guid.ToByteArray())
+                .Replace("/", "")
+                .Replace("+", "")
+                .Substring(0, 8);
+            await hubConnection.SendAsync("CreateRoom", roomName);
+            await NewOpening();
+
+        }
+    }
+
+    public async Task JoinRoom()
+    {
+        if (hubConnection is not null)
+        {
+            host = false;
+            inRoom = true;
+            Guid guid = Guid.NewGuid();
+            await hubConnection.SendAsync("JoinRoom", roomName);
+        }
+        else
+        {
+            roomName = "";
+            host = false;
+            inRoom = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private async Task PlayAudio(int seconds)
+    {
+        if (!hiddenLabel) // if the video is currently showing.
+        {
+            await NewOpening();
+        }
+        await hubConnection.SendAsync("PlayAudio", roomName, seconds);
+
+    }
+
+    private async Task PlayVideo()
+    {
+        await hubConnection.SendAsync("PlayVideo", roomName);
+
+    }
+
+    [JSInvokable]
+    public async Task NewOpening()
+    {
+        if (host && hubConnection is not null)
+        {            
+            videoIndex = rnd.Next(videoFiles.Count);
+            await hubConnection.SendAsync("SendVideo", roomName, videoIndex);
+        }
+    }
+
+    public async Task PlayerJoinedSendOpening()
+    {
+        if (host && hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendVideo", roomName, videoIndex);
+        }
+    }
+
+    private async Task ReadFile()
+    {
+        string? line;
+        StreamReader sr = new StreamReader("wwwroot/VideoText.txt");
+
+        //Read the first line of text
+        line = sr.ReadLine();
+        //Continue to read until you reach end of file
+        while (line != null)
+        {
+            string[] currentLine = line.Split('-');
+            if (currentLine.Length == 4)
+            {
+                VideoFile currVideoInfo = new VideoFile(currentLine[0].Trim(), currentLine[1].Trim(), currentLine[2].Trim(), currentLine[3].Trim());
+                videoFiles.Add(currVideoInfo);
+            }
+            //Read the next line
+            line = sr.ReadLine();
+        }
+        videoFilesAll = videoFiles;
+        //close the file
+        sr.Close();
+    }
+
+    private async Task HideRoomName()
+    {
+        hiddenName = !hiddenName; //inverts hidden name
+        buttonText = !hiddenName ? "Hide Room Name" : "Show Room Name";
+    }
+}

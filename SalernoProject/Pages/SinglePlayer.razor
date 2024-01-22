@@ -1,15 +1,10 @@
-﻿@page "/{roomId?}"
+﻿@page "/"
+@page "/SinglePlayer"
 @using SalernoProject.Data
 @using System.IO;
 @inject IConfiguration Config
 @inject IJSRuntime js
 @inject BlobService BlobService
-@inject RoomManager roomManager
-@inject IHubContext<QuizHub> hubContext
-@inject NavigationManager navigationManager
-
-
-
 
 <PageTitle>Anime Openings Tester</PageTitle>
 <style>
@@ -22,7 +17,7 @@
     }
 </style>
 
-<h1>Welcome to Anime Openings Quiz! Multiplayer Players: @counter</h1>
+<h1>Welcome to Anime Openings Quiz!</h1>
 
 <button @onclick="NewOpening">New Opening</button>
 <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
@@ -41,8 +36,6 @@
 
 @code
 {
-    [Parameter]
-    public string roomId { get; set; } = ""; // Add [Parameter] attribute
     private string animeName = "", openingNumber = "", openingName = "";
     private string videoURI = "";
     private string defaultConnection = "";
@@ -53,66 +46,23 @@
     private BlobService? blobServer;
     private string sasToken;
     bool hiddenLabel = true;
-    private Participant participant;
-    private int counter = 0;
-
-
-    protected override async Task OnInitializedAsync()
+    
+    protected async override Task OnInitializedAsync()
     {
         blobServer = new BlobService(Config);
         await ReadFile();
+        sasToken = blobServer.GenerateSasTokenForContainer(); // Only one sas token is made, 
 
-        roomId = navigationManager.Uri.Split('/').LastOrDefault() ?? "";
-
-
-        if (string.IsNullOrEmpty(roomId))
-        {
-            // If no room ID is provided in the URL, create a new room
-            var room = roomManager.CreateRoom();
-            roomId = room.RoomId;
-            navigationManager.NavigateTo($"/{roomId}");
-
-        }
-
-        sasToken = blobServer.GenerateSasTokenForContainer();
-        await JoinRoom();
-    }
-
-    private async Task JoinRoom()
-    {
-        participant = new Participant { ConnectionId = Guid.NewGuid().ToString() };
-        roomManager.JoinRoom(roomId, participant);
-
-        // Additional logic for joining the room (e.g., SignalR hub method)
-        await hubContext.Clients.Group(roomId).SendAsync("JoinRoom", roomId, participant.ConnectionId);
-    }
-
-    public async Task IncreaseCounter()
-    {
-        counter++;
-        StateHasChanged();
-    }
-
-    private async Task LeaveRoom()
-    {
-        roomManager.LeaveRoom(roomId, participant.ConnectionId);
-
-        // Additional logic for leaving the room (e.g., SignalR hub method)
-        await hubContext.Clients.Group(roomId).SendAsync("LeaveRoom", participant.ConnectionId);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-        {
+        {            
             await NewOpening();
         }
     }
 
-    private async Task PlayAudioHelper(int seconds)
-    {
-        await hubContext.Clients.Group(roomId).SendAsync("PlayAudio", roomId, seconds);
-    }
 
     private async Task PlayAudio(int seconds)
     {

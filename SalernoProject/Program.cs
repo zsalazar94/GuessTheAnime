@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using SalernoProject.Hubs;
 using SalernoProject.Data;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,9 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<BlobService>();
-builder.Services.AddSingleton<RoomManager>();
-builder.Services.AddSignalR();
-
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+          new[] { "application/octet-stream" });
+});
 
 var app = builder.Build();
 
@@ -22,17 +26,22 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseResponseCompression();
+
+
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapBlazorHub();
-    endpoints.MapHub<QuizHub>("/quizHub"); // Adjust the hub endpoint as needed
-    endpoints.MapFallbackToPage("/_Host");
-});
+app.MapBlazorHub();
+
+app.MapFallbackToPage("/_Host");
+
+app.MapHub<ChatHub>("/chathub");
+app.MapHub<AnimeHub>("/animehub");
+
+
 
 app.Run();

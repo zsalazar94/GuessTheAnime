@@ -1,0 +1,36 @@
+﻿body 
+{
+}
+.video {
+    max-width: 60vw;
+    max-height: 60vh;
+    width: auto;
+    height: auto;
+    display: none
+}
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    width: 60%;
+    border: solid 1px black;
+    margin-top: 5px;
+}
+
+.checkbox-container {
+    flex: 0 0 50%; /* Each checkbox container takes up 50% of the row */
+    box-sizing: border-box;
+    padding: 10px; /* Adjust padding as needed */
+}
+
+.button-container {
+    flex: 0 0 100%; /* Takes up the full width of the row */
+    display: flex; /* Enables Flexbox */
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Centers vertically */
+    padding: 10px; /* Optional padding */
+}
+
+    .button-container button {
+        width: 50%; /* Set the width of the button */
+        /* Removed 'display: flex' as it's not necessary for the button itself */
+    }
