@@ -92,7 +92,8 @@ body {
 
 /* Send Button */
 .send-button {
-    background-color: #4CAF50;
+    /*background-color: #4CAF50;*/
+    background-color: #005f73;
     color: white;
     border: none;
     cursor: pointer;
@@ -234,7 +235,7 @@ ul.score-list {
     margin-top: 15px;
 }
 
-.time-button, .reveal-button, .filter-button, .submit-button {
+.time-button, .reveal-button, .filter-button, .submit-button, .agree-confirmation-button, .deny-confirmation-button {
     background-color: #ff5722;
     color: white;
     border: none;
@@ -247,6 +248,19 @@ ul.score-list {
     .time-button:hover, .reveal-button:hover, .filter-button:hover, .submit-button:hover {
         background-color: #e64a19;
     }
+
+.agree-confirmation-button {
+    background-color: red;
+}
+
+
+.deny-confirmation-button {
+    background-color: green;
+}
+
+.submit-button {
+    margin-left: 6px;
+}
 
 /* Adjustments for mobile responsiveness */
 @media (max-width: 768px) {

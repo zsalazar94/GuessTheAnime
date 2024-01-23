@@ -67,7 +67,10 @@ else
                     <button @onclick="() => PlayAudio(10000)" class="time-button">10 Seconds</button>
                     <button @onclick="() => PlayAudio(20000)" class="time-button">20 Seconds</button>
                     <button @onclick="() => PlayAudio(30000)" class="time-button">30 Seconds</button>
-                    <button @onclick="PlayVideo" class="reveal-button">Reveal Answer</button>
+                    <button @onclick="ConfirmPlayVideo" class="reveal-button" hidden="@revealConfirm">Reveal Answer</button>
+                    <button @onclick="PlayVideo" class="agree-confirmation-button" hidden="@(!revealConfirm)">Yes, Reveal Answer</button>
+                    <button @onclick="ConfirmPlayVideo" class="deny-confirmation-button" hidden="@(!revealConfirm)">No, Wait</button>
+
                 }
                 <button @onclick="SubmitGuess" class="submit-button" hidden="@hasGuessed">Submit Guess</button>
             </div>
@@ -155,7 +158,7 @@ else
 {
     public string animeGuess = ""; // what the user has guessed is the answer
     public bool hasGuessed = false; // decides whether to hide submit guess button.
-    public bool hiddenName = true, selectedFilter = false; // booleans for whether or not to show certain elements
+    public bool hiddenName = true, selectedFilter = false, revealConfirm = false; // booleans for whether or not to show certain elements
     public string roomName = "", userName = ""; // names of the room we are in and what we chose as our username
     public string userColor = "";
     private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken = "", roomNameButtonText = "Show Room Name";
@@ -200,22 +203,6 @@ else
         selectedAnimes = allAnimeList;
     }
 
-
-    private async Task FilterAnime()
-    {
-        if (checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).Count() > 0)
-        {
-            selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
-            await hubConnection.SendAsync("SetFilter", roomName, selectedAnimes);
-
-            if (!selectedAnimes.Contains(currentVideo.animeName))
-            {                
-                await NewOpening();
-            }
-
-        }
-    }
-
     private async Task SubmitGuess()
     {
         hasGuessed = true;
@@ -237,11 +224,28 @@ else
         await hubConnection.SendAsync("SendMessage", roomName, myMessage);
     }
 
-    private async Task ChangeFilterAnime()
+    private async Task ChangeFilterAnime() // toggles visibility of anime filters.
     {
-        videoFiles = videoFilesAll;
+        selectedFilter = !selectedFilter;
+        if (selectedFilter) // if we are hiding the filters
+        {
+            await FilterAnime(); // set the filter
+        }
+    }
+    
+    private async Task FilterAnime()
+    {
+        if (checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).Count() > 0)
+        {
+            selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
+            await hubConnection.SendAsync("SetFilter", roomName, selectedAnimes);
 
-        selectedFilter = false;
+            if (!selectedAnimes.Contains(currentVideo.animeName))
+            {                
+                await NewOpening();
+            }
+
+        }
     }
 
     private async Task StartHub()
@@ -413,9 +417,15 @@ else
         await hubConnection.SendAsync("PlayAudio", roomName, seconds);
     }
 
+    private async Task ConfirmPlayVideo()
+    {
+        revealConfirm = !revealConfirm;
+        await InvokeAsync(StateHasChanged);
+    }
 
     private async Task PlayVideo()
     {
+        revealConfirm = false; // sets the confirmation on early playing back to needing to be confirmed
         await hubConnection.SendAsync("PlayVideo", roomName);
     }
 
