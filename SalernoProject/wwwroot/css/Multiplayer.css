@@ -217,7 +217,7 @@ ul.score-list {
     margin-top: 15px;
 }
 
-.time-button, .reveal-button, .filter-button {
+.time-button, .reveal-button, .filter-button, .submit-button {
     background-color: #ff5722;
     color: white;
     border: none;
@@ -227,7 +227,7 @@ ul.score-list {
     transition: background-color 0.3s;
 }
 
-    .time-button:hover, .reveal-button:hover, .filter-button:hover {
+    .time-button:hover, .reveal-button:hover, .filter-button:hover, .submit-button:hover {
         background-color: #e64a19;
     }
 

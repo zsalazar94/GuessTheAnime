@@ -60,19 +60,22 @@ else
             <h3 hidden="@hiddenName">Your Room Name: @roomName</h3>
 
             <!-- Host Audio Controls -->
-            @if (host)
-            {
-                <div class="audio-controls">
+            <div class="audio-controls">
+
+                @if (host)
+                {
                     <button @onclick="() => PlayAudio(10000)" class="time-button">10 Seconds</button>
                     <button @onclick="() => PlayAudio(20000)" class="time-button">20 Seconds</button>
                     <button @onclick="() => PlayAudio(30000)" class="time-button">30 Seconds</button>
                     <button @onclick="PlayVideo" class="reveal-button">Reveal Answer</button>
-                </div>
-            }
+                }
+                <button @onclick="SubmitGuess" class="submit-button" hidden="@hasGuessed">Submit Guess</button>
+            </div>
+
 
             <!-- Anime Guess Selector -->
-            <label for="animeGuess">Your Anime Guess</label>
-            <select id="animeGuess" @bind="animeGuess" class="input-field">
+            <label for="animeGuess" hidden="@hasGuessed">Your Anime Guess  </label>
+            <select id="animeGuess" @bind="animeGuess" hidden="@hasGuessed" class="input-field">
                 <option value=""></option>
                 @foreach (string anime in selectedAnimes)
                 {
@@ -145,6 +148,7 @@ else
 @code 
 {
     public string animeGuess = ""; // what the user has guessed is the answer
+    public bool hasGuessed = false; // decides whether to hide submit guess button.
     public bool hiddenName = true, selectedFilter = false; // booleans for whether or not to show certain elements
     public string roomName = "", userName = ""; // names of the room we are in and what we chose as our username
     private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken = "", roomNameButtonText = "Show Room Name";
@@ -164,6 +168,7 @@ else
     List<string> selectedAnimes = new List<string>();  // list of anime that are true in the checkedAnimes dictionary
 
     Dictionary<string, int> scoreDict = new Dictionary<string, int>(); // scoreboard values for each player
+    List<string> usersWhoHaveGuessed = new List<string>(); // these are the users who have submitted a guess for the current opening
 
     private BlobService? blobServer;
     bool hiddenLabel = true; // hide or show video
@@ -204,6 +209,13 @@ else
         }
     }
 
+    private async Task SubmitGuess()
+    {
+        hasGuessed = true;
+        await hubConnection.SendAsync("SendGuess", roomName, userName);
+        
+    }
+
     private async Task sendChatMessage()
     {
         ChatMessage myMessage = new ChatMessage(newMessage, userName);
@@ -223,25 +235,25 @@ else
         .WithUrl(Navigation.ToAbsoluteUri("/animehub"))
         .Build();
 
-       //these are the methods to be called when AnimeHub needs to make a method call.
-       hubConnection.On("RoomCreated", async() =>
-       {
-           await InvokeAsync(StateHasChanged);
-       });
-       
-       hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
-       {
-           if (host)
-           {                
-               await FilterAnime(); // send filters to everyone since new player joined
-           }
-           await PlayerJoinedSendOpening();
-           scoreDict.Add(joiningUserName, 0);
-           if (host)
-           {
-               await hubConnection.SendAsync("SendScoreboard", roomName, scoreDict);
-           }
-           await InvokeAsync(StateHasChanged);
+        //these are the methods to be called when AnimeHub needs to make a method call.
+        hubConnection.On("RoomCreated", async() =>
+        {
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
+        {
+            if (host)
+            {                
+                await FilterAnime(); // send filters to everyone since new player joined
+            }
+            await PlayerJoinedSendOpening();
+            scoreDict.Add(joiningUserName, 0);
+            if (host)
+            {
+                await hubConnection.SendAsync("SendScoreboard", roomName, scoreDict);
+            }
+            await InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On<string>("IncreaseScore", async (usernameToIncrease) =>
@@ -291,6 +303,7 @@ else
             openingNumber = currentVideo.openingNumber;
             openingName = currentVideo.openingName;
             hiddenLabel = false;
+            hasGuessed = false;
             if (animeGuess == animeName) // if we got the answer correct
             {
                 await hubConnection.SendAsync("SendCorrectNames", roomName, userName);
@@ -312,6 +325,19 @@ else
         {
             messages.Add(incomingMessage);
             await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("RecieveGuess", async (incomingUser) =>
+        {
+            if (host)
+            {
+                usersWhoHaveGuessed.Add(incomingUser);
+                if (usersWhoHaveGuessed.Count() == scoreDict.Count()) // if everyone has submitted
+                {
+                    usersWhoHaveGuessed.Clear(); // empty the list for the new guess
+                    await PlayVideo();
+                }
+            }
         });
 
         await hubConnection.StartAsync();
