@@ -70,6 +70,46 @@ body {
     overflow-y: auto; /* Allows scrolling inside the message list */
     flex-grow: 1; /* Allows the message list to grow and fill available space */
     margin-bottom: 10px; /* Spacing between messages and input area */
+    word-wrap: break-word; /* Breaks long words to prevent horizontal scrolling */
+}
+
+.input-controls-container {
+    display: flex;
+    width: 100%;
+}
+
+/* Controls Container (Color Picker and Send Button) */
+.controls-container {
+    display: flex;
+    flex-direction: column; /* Stacks children vertically */
+}
+
+/* Color Picker */
+.color-picker {
+    cursor: pointer; /* Changes cursor to indicate clickable area */
+    height: 60%;
+}
+
+/* Send Button */
+.send-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    height: 50%;
+}
+
+
+
+/* Chat Input (Textarea) */
+.chat-input {
+    flex-grow: 1; /* Allows the input to grow and take available space */
+    padding: 8px;
+    margin-right: 5px; /* Spacing between input and controls */
+    border: 1px solid #555;
+    border-radius: 4px;
+    resize: none; /* Prevents resizing of the textarea */
+    overflow-y: auto; /* Allows internal scrolling */
 }
 
 /* Chat Input Container */
@@ -78,29 +118,6 @@ body {
     width: 100%;
     align-items: center;
 }
-
-/* Chat Input */
-.chat-input {
-    flex-grow: 1; /* Allows the input to grow and fill available space */
-    padding: 8px;
-    margin-right: 5px; /* Spacing between input field and button */
-    border: 1px solid #555;
-    border-radius: 4px;
-}
-
-/* Send Button */
-.send-button {
-    padding: 8px 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-    .send-button:hover {
-        background-color: #45a049;
-    }
 
 
 /* Adjustments for when the video is not visible */

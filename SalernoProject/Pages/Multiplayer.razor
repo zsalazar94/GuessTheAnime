@@ -104,7 +104,7 @@ else
             <!-- Video and Anime Info -->
             <div class="media-chat-container">
 
-                <div class="video-section @(hiddenLabel ? "is-hidden" : "")">
+                <div class="video-section @(hiddenLabel ? "is-hidden" : "")"> <!-- this ternary operator changes the class depending on if its hidden or not -->
                     <h2>@animeName - @openingNumber - @openingName</h2>
                     <video id="video" class="video">
                         <source id="videoSource" src="@videoURI" />
@@ -122,12 +122,18 @@ else
                             </li>
                         }
                     </ul>
-                    <!-- Input new messages -->
-                    <div class="chat-input-container">
-                        <input type="text" class="chat-input" placeholder="Type a message..." @bind=newMessage/>
-                        <button class="send-button" @onclick=sendChatMessage>Send</button>
+                    <!-- Input and Controls Container -->
+                    <div class="input-controls-container">
+                        <!-- Textarea for New Messages -->
+                        <textarea class="chat-input" placeholder="Type a message..." @bind=newMessage></textarea>
+                        <!-- Color Picker and Send Button Container -->
+                        <div class="controls-container">
+                            <input type="color" @bind="userColor" class="color-picker" />
+                            <button class="send-button" @onclick=sendChatMessage>Send</button>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
 
@@ -151,6 +157,7 @@ else
     public bool hasGuessed = false; // decides whether to hide submit guess button.
     public bool hiddenName = true, selectedFilter = false; // booleans for whether or not to show certain elements
     public string roomName = "", userName = ""; // names of the room we are in and what we chose as our username
+    public string userColor = "";
     private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken = "", roomNameButtonText = "Show Room Name";
     private int videoIndex = 0;
 
@@ -213,12 +220,20 @@ else
     {
         hasGuessed = true;
         await hubConnection.SendAsync("SendGuess", roomName, userName);
-        
+
     }
 
     private async Task sendChatMessage()
     {
-        ChatMessage myMessage = new ChatMessage(newMessage, userName);
+        ChatMessage myMessage;
+        if (userColor == "")
+        {
+            myMessage = new ChatMessage(newMessage, userName);
+        }
+        else
+        {
+            myMessage = new ChatMessage(newMessage, userName, userColor);
+        }
         await hubConnection.SendAsync("SendMessage", roomName, myMessage);
     }
 
