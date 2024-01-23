@@ -121,14 +121,16 @@ else
                         @foreach (ChatMessage message in messages)
                         {
                             <li>
-                                <span style="color: @message.userColor;">@message.username</span> : @message.message
+                                <pre><span style="color: @message.userColor;">@message.username</span> : @message.message</pre>
                             </li>
                         }
                     </ul>
                     <!-- Input and Controls Container -->
                     <div class="input-controls-container">
                         <!-- Textarea for New Messages -->
-                        <textarea class="chat-input" placeholder="Type a message..." @bind=newMessage></textarea>
+                        <textarea class="chat-input" placeholder="Type a message..." 
+                        @bind-value=newMessage @bind-value:event="oninput" 
+                        @onkeydown=HandleEnterKeyPress></textarea>
                         <!-- Color Picker and Send Button Container -->
                         <div class="controls-container">
                             <input type="color" @bind="userColor" class="color-picker" />
@@ -216,6 +218,14 @@ else
 
     }
 
+    private async Task HandleEnterKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await sendChatMessage();
+        }
+    }
+
     private async Task sendChatMessage()
     {
         ChatMessage myMessage;
@@ -227,6 +237,7 @@ else
         {
             myMessage = new ChatMessage(newMessage, userName, userColor);
         }
+        newMessage = string.Empty; // clear chat box
         await hubConnection.SendAsync("SendMessage", roomName, myMessage);
     }
 
