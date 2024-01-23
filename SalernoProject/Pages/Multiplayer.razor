@@ -146,7 +146,13 @@ else
             <ul class="score-list">
                 @foreach (var item in scoreDict)
                 {
-                    <li>@item.Key: @item.Value</li>
+                    <li>
+                        @item.Key: @item.Value
+                        @if (usersWhoHaveGuessed.Contains(item.Key))
+                        {
+                            <span class="check-mark">&#x2714;</span> <!-- Unicode check mark -->
+                        }
+                    </li>
                 }
             </ul>
         </div>
@@ -232,7 +238,7 @@ else
             await FilterAnime(); // set the filter
         }
     }
-    
+
     private async Task FilterAnime()
     {
         if (checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).Count() > 0)
@@ -318,6 +324,7 @@ else
 
         hubConnection.On("PlayVideo", async () =>
         {
+            usersWhoHaveGuessed.Clear(); // empty the list of who has guessed for next video
             animeName = currentVideo.animeName;
             openingNumber = currentVideo.openingNumber;
             openingName = currentVideo.openingName;
@@ -348,15 +355,16 @@ else
 
         hubConnection.On<string>("RecieveGuess", async (incomingUser) =>
         {
+            usersWhoHaveGuessed.Add(incomingUser);
             if (host)
             {
-                usersWhoHaveGuessed.Add(incomingUser);
                 if (usersWhoHaveGuessed.Count() == scoreDict.Count()) // if everyone has submitted
                 {
                     usersWhoHaveGuessed.Clear(); // empty the list for the new guess
                     await PlayVideo();
                 }
             }
+            await InvokeAsync(StateHasChanged);
         });
 
         await hubConnection.StartAsync();
