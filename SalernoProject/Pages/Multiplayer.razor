@@ -14,90 +14,174 @@
 </head>
 
 
-@if(!inRoom)
+@if (!inRoom)
 {
-    <h3>If someone has given you a room name enter below and hit join room!</h3>
-    <input type="text" @bind="roomName" />
-    <button @onclick="JoinRoom">Join Room </button>
-    <br />
-    <label>Create a new room here!</label><button @onclick="CreateRoom">Create Room</button>
+    <!-- Room Section -->
+    <section class="room-section">
+        <h3>Enter a room name to join or create a new room!</h3>
+
+        <!-- User Display Name -->
+        <div class="form-group">
+            <label for="displayName">Display Name</label>
+            <input type="text" id="displayName" @bind="userName" class="input-field" />
+        </div>
+
+        <!-- Join Room Section -->
+        <div class="join-room">
+            <h4>Join an Existing Room</h4>
+            <div class="form-group">
+                <label for="roomCode">Room Code</label>
+                <input type="text" id="roomCode" @bind="roomName" class="input-field" />
+                <button @onclick="JoinRoom" class="action-button">Join Room</button>
+            </div>
+        </div>
+
+        <!-- Create Room Section -->
+        <div class="create-room">
+            <h4>Create a New Room</h4>
+            <button @onclick="CreateRoom" class="action-button">Create Room</button>
+        </div>
+    </section>
 }
 else
 {
-    <h1>Welcome to Anime Openings Quiz!</h1>
-    <button @onclick="ChangeFilterAnime">Change Filter</button>
-    <button @onclick="HideRoomName">@buttonText</button>
-    <h3 hidden="@hiddenName" style="display: inline">Your Room Name is: @roomName</h3>
-    <br />
-
-    @if(host)
-    {
-        <div style="margin-top: 5px">
-        <button @onclick="() => PlayAudio(10000)">10 Seconds</button>
-        <button @onclick="() => PlayAudio(20000)">20 Seconds</button>
-        <button @onclick="() => PlayAudio(30000)">30 Seconds</button>
-        <button @onclick="PlayVideo">Reveal Answer</button>
-        </div>
-    }
-    else
-    {
-        <button hidden @onclick="() => PlayAudio(10000)">10 Seconds</button>
-        <button hidden @onclick="() => PlayAudio(20000)">20 Seconds</button>
-        <button hidden @onclick="() => PlayAudio(30000)">30 Seconds</button>
-        <button hidden @onclick="PlayVideo">Reveal Answer</button>
-    }
-    <label>Enter your Anime Guess!</label>
-    
-    <select>
-        @foreach (string anime in selectedAnimes)
-        {
-            <option value="@anime">@anime</option>
-        }
-    </select>
-    @if(host)
-    {        
-        <div hidden="@selectedFilter" class="row">
-            <h3>Select Anime you wish to include.</h3>
-
-            @foreach (string anime in animeList)
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Content Container -->
+        <div class="content-container">
+            <h1>Welcome to Anime Openings Quiz!</h1>
+            <!-- Host Controls -->
+            @if (host)
             {
-                <div class="checkbox-container">
-                    <input type="checkbox" id="@anime" @bind="@checkedAnimes[anime]" />
-                    <label for="@anime">@anime</label>
+                <button @onclick="ChangeFilterAnime" class="action-button">Change Filter</button>
+            }
+            <!-- Room Name Toggle -->
+            <button @onclick="HideRoomName" class="action-button">@roomNameButtonText</button>
+            <h3 hidden="@hiddenName">Your Room Name: @roomName</h3>
+
+            <!-- Host Audio Controls -->
+            <div class="audio-controls">
+
+                @if (host)
+                {
+                    <button @onclick="() => PlayAudio(10000)" class="time-button">10 Seconds</button>
+                    <button @onclick="() => PlayAudio(20000)" class="time-button">20 Seconds</button>
+                    <button @onclick="() => PlayAudio(30000)" class="time-button">30 Seconds</button>
+                    <button @onclick="ConfirmPlayVideo" class="reveal-button" hidden="@revealConfirm">Reveal Answer</button>
+                    <button @onclick="PlayVideo" class="agree-confirmation-button" hidden="@(!revealConfirm)">Yes, Reveal Answer</button>
+                    <button @onclick="ConfirmPlayVideo" class="deny-confirmation-button" hidden="@(!revealConfirm)">No, Wait</button>
+
+                }
+                <button @onclick="SubmitGuess" class="submit-button" hidden="@hasGuessed">Submit Guess</button>
+            </div>
+
+
+            <!-- Anime Guess Selector -->
+            <label for="animeGuess" hidden="@hasGuessed">Your Anime Guess  </label>
+            <select id="animeGuess" @bind="animeGuess" hidden="@hasGuessed" class="input-field">
+                <option value=""></option>
+                @foreach (string anime in selectedAnimes)
+                {
+                    <option value="@anime">@anime</option>
+                }
+            </select>
+
+            <!-- Anime Filter for Host -->
+            @if (host)
+            {
+                <div hidden="@selectedFilter" class="filter-section">
+                    <h3>Select Anime to Include</h3>
+                    @foreach (string anime in allAnimeList)
+                    {
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="@anime" @bind="@checkedAnimes[anime]" />
+                            <label for="@anime">@anime</label>
+                        </div>
+                    }
+                    <div class="button-container">
+                        <button @onclick="FilterAnime" class="filter-button">Submit</button>
+                    </div>
                 </div>
             }
-            <div class="button-container">
-                <button @onclick="FilterAnime">Submit</button>
+
+            <!-- Video and Anime Info -->
+            <div class="media-chat-container">
+
+                <div class="video-section @(hiddenLabel ? "is-hidden" : "")"> <!-- this ternary operator changes the class depending on if its hidden or not -->
+                    <h2>@animeName - @openingNumber - @openingName</h2>
+                    <video id="video" class="video">
+                        <source id="videoSource" src="@videoURI" />
+                    </video>
+                </div>
+
+                <!-- Chat room Container -->
+                <div class="chat-section">
+                    <h2>Chat</h2>
+                    <ul id="messagesList">
+                        @foreach (ChatMessage message in messages)
+                        {
+                            <li>
+                                <span style="color: @message.userColor;">@message.username</span> : @message.message
+                            </li>
+                        }
+                    </ul>
+                    <!-- Input and Controls Container -->
+                    <div class="input-controls-container">
+                        <!-- Textarea for New Messages -->
+                        <textarea class="chat-input" placeholder="Type a message..." @bind=newMessage></textarea>
+                        <!-- Color Picker and Send Button Container -->
+                        <div class="controls-container">
+                            <input type="color" @bind="userColor" class="color-picker" />
+                            <button class="send-button" @onclick=sendChatMessage>Send</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
-    }
 
-    <br />
-    <div hidden="@hiddenLabel">
-        <h2>@animeName - @openingNumber - @openingName</h2>
-
-        <video id="video" class="video">
-            <source id="videoSource" src="@videoURI" />
-        </video>
+        <!-- Scoreboard Container -->
+        <div class="scoreboard-container">
+            <h3>Scoreboard</h3>
+            <ul class="score-list">
+                @foreach (var item in scoreDict)
+                {
+                    <li>@item.Key: @item.Value</li>
+                }
+            </ul>
+        </div>
     </div>
 }
 
+
 @code 
 {
-    public bool hiddenName = true, selectedFilter = false;
-    public string roomName = "", newPlayer = "";
-    private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken, buttonText = "Show Room Name";
+    public string animeGuess = ""; // what the user has guessed is the answer
+    public bool hasGuessed = false; // decides whether to hide submit guess button.
+    public bool hiddenName = true, selectedFilter = false, revealConfirm = false; // booleans for whether or not to show certain elements
+    public string roomName = "", userName = ""; // names of the room we are in and what we chose as our username
+    public string userColor = "";
+    private string animeName = "", openingNumber = "", openingName = "", videoURI = "", defaultConnection = "", sasToken = "", roomNameButtonText = "Show Room Name";
     private int videoIndex = 0;
+
     private Random rnd = new Random();
-    private VideoFile? currentVideo;
-    private List<VideoFile> videoFiles = new List<VideoFile>();
-    private List<VideoFile> videoFilesAll = new List<VideoFile>();
-    Dictionary<string, bool> checkedAnimes = new Dictionary<string, bool>();
-    List<string> selectedAnimes = new List<string>();
+
+    private List<ChatMessage> messages = new List<ChatMessage>(); // List of messages that have been sent in the chat feature.
+    private string newMessage = "";
+    private List<VideoFile> videoFilesAll = new List<VideoFile>(); // list of all video files
+    private List<VideoFile> videoFiles = new List<VideoFile>(); // list of video files we can select based on filters
+    private VideoFile? currentVideo; // what video is currently being shown
+
+
+    List<string> allAnimeList = new List<string>(); // list of all anime
+    Dictionary<string, bool> checkedAnimes = new Dictionary<string, bool>(); // dictionary to say if to include anime or not
+    List<string> selectedAnimes = new List<string>();  // list of anime that are true in the checkedAnimes dictionary
+
+    Dictionary<string, int> scoreDict = new Dictionary<string, int>(); // scoreboard values for each player
+    List<string> usersWhoHaveGuessed = new List<string>(); // these are the users who have submitted a guess for the current opening
 
     private BlobService? blobServer;
-    bool hiddenLabel = true;
-    List<string> animeList = new List<string>();
+    bool hiddenLabel = true; // hide or show video
 
 
     public bool host = false, inRoom = false;
@@ -111,15 +195,44 @@ else
         sasToken = blobServer.GenerateSasTokenForContainer();
         await ReadFile();
 
-        animeList = videoFiles.Select(x => x.animeName).Distinct().ToList();
-        foreach (var anime in animeList)
+        allAnimeList = videoFiles.Select(x => x.animeName).Distinct().ToList();
+        foreach (var anime in allAnimeList)
         {
             checkedAnimes[anime] = false;
         }
-        selectedAnimes = animeList;
+        selectedAnimes = allAnimeList;
     }
 
+    private async Task SubmitGuess()
+    {
+        hasGuessed = true;
+        await hubConnection.SendAsync("SendGuess", roomName, userName);
 
+    }
+
+    private async Task sendChatMessage()
+    {
+        ChatMessage myMessage;
+        if (userColor == "")
+        {
+            myMessage = new ChatMessage(newMessage, userName);
+        }
+        else
+        {
+            myMessage = new ChatMessage(newMessage, userName, userColor);
+        }
+        await hubConnection.SendAsync("SendMessage", roomName, myMessage);
+    }
+
+    private async Task ChangeFilterAnime() // toggles visibility of anime filters.
+    {
+        selectedFilter = !selectedFilter;
+        if (selectedFilter) // if we are hiding the filters
+        {
+            await FilterAnime(); // set the filter
+        }
+    }
+    
     private async Task FilterAnime()
     {
         if (checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).Count() > 0)
@@ -135,29 +248,42 @@ else
         }
     }
 
-    private async Task ChangeFilterAnime()
-    {
-        videoFiles = videoFilesAll;
-
-        selectedFilter = false;
-    }
-
     private async Task StartHub()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/animehub"))
-            .Build();
+        .WithUrl(Navigation.ToAbsoluteUri("/animehub"))
+        .Build();
 
         //these are the methods to be called when AnimeHub needs to make a method call.
         hubConnection.On("RoomCreated", async() =>
-       {
-           await InvokeAsync(StateHasChanged);
-       });
-
-        hubConnection.On("PlayerJoined", async() =>
         {
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
+        {
+            if (host)
+            {                
+                await FilterAnime(); // send filters to everyone since new player joined
+            }
             await PlayerJoinedSendOpening();
-            newPlayer = "new player has joined";
+            scoreDict.Add(joiningUserName, 0);
+            if (host)
+            {
+                await hubConnection.SendAsync("SendScoreboard", roomName, scoreDict);
+            }
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("IncreaseScore", async (usernameToIncrease) =>
+        {
+            scoreDict[usernameToIncrease] += 1;
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<Dictionary<string,int>>("ScoreboardSend", async (scores) =>
+        {
+            scoreDict = scores;
             await InvokeAsync(StateHasChanged);
         });
 
@@ -169,7 +295,6 @@ else
 
         hubConnection.On("PlayerLeft", () =>
         {
-            newPlayer = "Player has left";
             InvokeAsync(StateHasChanged);
         });
 
@@ -197,9 +322,13 @@ else
             openingNumber = currentVideo.openingNumber;
             openingName = currentVideo.openingName;
             hiddenLabel = false;
+            hasGuessed = false;
+            if (animeGuess == animeName) // if we got the answer correct
+            {
+                await hubConnection.SendAsync("SendCorrectNames", roomName, userName);
+            }
             await js.InvokeVoidAsync("showVideoAndPlay", "video", DotNetObjectReference.Create(this));
             await InvokeAsync(StateHasChanged);
-
         });
 
         hubConnection.On<List<string>>("RecieveFilter", (selectAnime) =>
@@ -209,47 +338,66 @@ else
             selectedFilter = true;
             videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
             InvokeAsync(StateHasChanged);
-
         });
 
+        hubConnection.On<ChatMessage>("RecieveMessage", async (incomingMessage) =>
+        {
+            messages.Add(incomingMessage);
+            await InvokeAsync(StateHasChanged);
+        });
 
+        hubConnection.On<string>("RecieveGuess", async (incomingUser) =>
+        {
+            if (host)
+            {
+                usersWhoHaveGuessed.Add(incomingUser);
+                if (usersWhoHaveGuessed.Count() == scoreDict.Count()) // if everyone has submitted
+                {
+                    usersWhoHaveGuessed.Clear(); // empty the list for the new guess
+                    await PlayVideo();
+                }
+            }
+        });
 
         await hubConnection.StartAsync();
     }
 
+
     private async Task CreateRoom()
     {
-        if (hubConnection is not null)
+        if (hubConnection is not null && userName != "")
         {
+
             host = true;
             inRoom = true;
             Guid guid = Guid.NewGuid();
+            scoreDict.Add(userName, 0);
             roomName = Convert.ToBase64String(guid.ToByteArray())
                 .Replace("/", "")
                 .Replace("+", "")
                 .Substring(0, 8);
             await hubConnection.SendAsync("CreateRoom", roomName);
             await NewOpening();
-
         }
     }
 
+
     public async Task JoinRoom()
     {
-        if (hubConnection is not null)
+        if (hubConnection is not null && userName != "")
         {
             host = false;
             inRoom = true;
             Guid guid = Guid.NewGuid();
-            await hubConnection.SendAsync("JoinRoom", roomName);
+            await hubConnection.SendAsync("JoinRoom", roomName, userName);
         }
         else
         {
-            roomName = "";
             host = false;
             inRoom = false;
         }
     }
+
 
     public async ValueTask DisposeAsync()
     {
@@ -259,6 +407,7 @@ else
         }
     }
 
+
     private async Task PlayAudio(int seconds)
     {
         if (!hiddenLabel) // if the video is currently showing.
@@ -266,14 +415,20 @@ else
             await NewOpening();
         }
         await hubConnection.SendAsync("PlayAudio", roomName, seconds);
+    }
 
+    private async Task ConfirmPlayVideo()
+    {
+        revealConfirm = !revealConfirm;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task PlayVideo()
     {
+        revealConfirm = false; // sets the confirmation on early playing back to needing to be confirmed
         await hubConnection.SendAsync("PlayVideo", roomName);
-
     }
+
 
     [JSInvokable]
     public async Task NewOpening()
@@ -285,6 +440,7 @@ else
         }
     }
 
+
     public async Task PlayerJoinedSendOpening()
     {
         if (host && hubConnection is not null)
@@ -292,6 +448,7 @@ else
             await hubConnection.SendAsync("SendVideo", roomName, videoIndex);
         }
     }
+
 
     private async Task ReadFile()
     {
@@ -317,9 +474,10 @@ else
         sr.Close();
     }
 
+
     private async Task HideRoomName()
     {
         hiddenName = !hiddenName; //inverts hidden name
-        buttonText = !hiddenName ? "Hide Room Name" : "Show Room Name";
+        roomNameButtonText = !hiddenName ? "Hide Room Name" : "Show Room Name";
     }
 }

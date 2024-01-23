@@ -18,7 +18,7 @@ namespace SalernoProject.Hubs
             await Clients.Caller.SendAsync("RoomCreated");
         }
 
-        public async Task JoinRoom(string roomName)
+        public async Task JoinRoom(string roomName, string userName)
         {
             // Check if the room exists
             if (rooms.ContainsKey(roomName))
@@ -26,11 +26,11 @@ namespace SalernoProject.Hubs
                 // Add the player to the room
                 rooms[roomName].Add(Context.ConnectionId);
 
-                // Notify only the clients in the specific room about the new player
-                await Clients.Group(roomName).SendAsync("PlayerJoined");
-
                 // Add the player to the SignalR group for further targeted communication
                 await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
+
+                // Notify only the clients in the specific room about the new player
+                await Clients.Group(roomName).SendAsync("PlayerJoined", userName);
             }
             else
             {
@@ -44,6 +44,11 @@ namespace SalernoProject.Hubs
             await Clients.Group(roomName).SendAsync("RecieveFilter", selectedAnimes);
 
         }
+        public async Task SendMessage(string roomName, ChatMessage message)
+        {
+            await Clients.Group(roomName).SendAsync("RecieveMessage", message);
+        }
+
         public async Task SendVideo(string roomName, int videoIndex)
         {
             await Clients.Group(roomName).SendAsync("RecieveVideo", videoIndex);
@@ -82,9 +87,20 @@ namespace SalernoProject.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendMessage(string user, string message)
+        public async Task SendScoreboard(string roomName, Dictionary<string, int> scoreboard)
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
+
+            await Clients.Group(roomName).SendAsync("ScoreboardSend", scoreboard);
+        }
+
+        public async Task SendCorrectNames(string roomName, string username)
+        {
+            await Clients.Group(roomName).SendAsync("IncreaseScore", username);
+        }
+        
+        public async Task SendGuess(string roomName, string username)
+        {
+            await Clients.Group(roomName).SendAsync("RecieveGuess", username);
         }
     }
 }
