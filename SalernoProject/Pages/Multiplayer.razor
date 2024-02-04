@@ -121,7 +121,7 @@ else
                         @foreach (ChatMessage message in messages)
                         {
                             <li>
-                                <pre><span style="color: @message.userColor;">@message.username</span> : @message.message</pre>
+                                <span class="message-text" style="color: @message.userColor;">@message.username</span> : @message.message
                             </li>
                         }
                     </ul>
@@ -231,9 +231,7 @@ else
     private async Task HandleEnterKeyPress(KeyboardEventArgs e)
     {
         await js.InvokeVoidAsync("blurElementById", "chattextarea");
-        StateHasChanged();
         await js.InvokeVoidAsync("focusElementById", "chattextarea");
-        StateHasChanged();
         if (e.Key == "Enter" && !e.ShiftKey)
         {
             await sendChatMessage();
@@ -244,7 +242,6 @@ else
     {
         newMessage = newMessage.Trim();
         if (newMessage == "") {
-            newMessage = "";
             return;
         }
 
@@ -381,8 +378,14 @@ else
 
         hubConnection.On<ChatMessage>("RecieveMessage", async (incomingMessage) =>
         {
+            bool scrollChat = await js.InvokeAsync<bool>("checkIfAtBottomOfChat");
             messages.Add(incomingMessage);
+
             await InvokeAsync(StateHasChanged);
+            if (scrollChat)
+            {
+                await js.InvokeVoidAsync("scrollToBottom");
+            }
         });
 
         hubConnection.On<string>("RecieveGuess", async (incomingUser) =>
