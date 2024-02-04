@@ -128,12 +128,18 @@ else
                     <!-- Input and Controls Container -->
                     <div class="input-controls-container">
                         <!-- Textarea for New Messages -->
-                        <textarea class="chat-input" placeholder="Type a message..." 
-                        @bind-value=newMessage @bind-value:event="oninput" 
+                        <textarea id="chattextarea" class="chat-input" placeholder="Type a message..." 
+                        @bind-value=newMessage @bind-value:event="onchange" 
                         @onkeydown=HandleEnterKeyPress></textarea>
                         <!-- Color Picker and Send Button Container -->
                         <div class="controls-container">
-                            <input type="color" @bind="userColor" class="color-picker" />
+                            <div class="color-picker-container">
+                                <input type="color" id="colorPicker" @bind="userColor" class="color-picker" />
+                                <label for="colorPicker" class="color-picker-icon">
+                                    <img src="eye_drop.png" alt="Color Picker" />
+                                </label>
+                            </div>
+
                             <button class="send-button" @onclick=sendChatMessage>Send</button>
                         </div>
                     </div>
@@ -144,19 +150,23 @@ else
 
         <!-- Scoreboard Container -->
         <div class="scoreboard-container">
-            <h3>Scoreboard</h3>
-            <ul class="score-list">
-                @foreach (var item in scoreDict)
-                {
-                    <li>
-                        @item.Key: @item.Value
-                        @if (usersWhoHaveGuessed.Contains(item.Key))
-                        {
-                            <span class="check-mark">&#x2714;</span> <!-- Unicode check mark -->
-                        }
-                    </li>
-                }
-            </ul>
+            <div class="scoreboard-title">
+                <h3>Scoreboard</h3>
+            </div>
+            <div class="scoreboard-content">
+                <ul class="score-list">
+                    @foreach (var item in scoreDict)
+                    {
+                        <li>
+                            @item.Key: @item.Value
+                            @if (usersWhoHaveGuessed.Contains(item.Key))
+                            {
+                                <span class="check-mark">&#x2714;</span> <!-- Unicode check mark -->
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
         </div>
     </div>
 }
@@ -220,6 +230,10 @@ else
 
     private async Task HandleEnterKeyPress(KeyboardEventArgs e)
     {
+        await js.InvokeVoidAsync("blurElementById", "chattextarea");
+        StateHasChanged();
+        await js.InvokeVoidAsync("focusElementById", "chattextarea");
+        StateHasChanged();
         if (e.Key == "Enter" && !e.ShiftKey)
         {
             await sendChatMessage();
@@ -228,6 +242,12 @@ else
 
     private async Task sendChatMessage()
     {
+        newMessage = newMessage.Trim();
+        if (newMessage == "") {
+            newMessage = "";
+            return;
+        }
+
         ChatMessage myMessage;
         if (userColor == "")
         {
@@ -237,8 +257,9 @@ else
         {
             myMessage = new ChatMessage(newMessage, userName, userColor);
         }
-        newMessage = string.Empty; // clear chat box
+        newMessage = ""; // clear chat box
         await hubConnection.SendAsync("SendMessage", roomName, myMessage);
+
     }
 
     private async Task ChangeFilterAnime() // toggles visibility of anime filters.
