@@ -205,6 +205,8 @@ else
     public bool host = false, inRoom = false;
     private HubConnection? hubConnection;
 
+    private TaskCompletionSource<bool> filterCompletionSource = new TaskCompletionSource<bool>(); // this handles if the filter has been set.
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -274,6 +276,10 @@ else
         {
             selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
             await hubConnection.SendAsync("SetFilter", roomName, selectedAnimes);
+
+            filterCompletionSource = new TaskCompletionSource<bool>();
+            await filterCompletionSource.Task;
+
 
             if (!selectedAnimes.Contains(currentVideo.animeName))
             {                
@@ -374,6 +380,8 @@ else
             selectedFilter = true;
             videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
             InvokeAsync(StateHasChanged);
+
+            filterCompletionSource.SetResult(true); //the filtering has finished.
         });
 
         hubConnection.On<ChatMessage>("RecieveMessage", async (incomingMessage) =>
