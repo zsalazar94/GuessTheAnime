@@ -128,9 +128,9 @@ else
                     <!-- Input and Controls Container -->
                     <div class="input-controls-container">
                         <!-- Textarea for New Messages -->
-                        <textarea id="chattextarea" class="chat-input" placeholder="Type a message..." 
-                        @bind-value=newMessage @bind-value:event="onchange" 
-                        @onkeydown=HandleEnterKeyPress></textarea>
+                        <textarea id="chattextarea" class="chat-input" placeholder="Type a message..."
+                                  @bind-value=newMessage @bind-value:event="onchange"
+                                  @onkeydown=HandleEnterKeyPress></textarea>
                         <!-- Color Picker and Send Button Container -->
                         <div class="controls-container">
                             <div class="color-picker-container">
@@ -172,7 +172,7 @@ else
 }
 
 
-@code 
+@code
 {
     public string animeGuess = ""; // what the user has guessed is the answer
     public bool hasGuessed = false; // decides whether to hide submit guess button.
@@ -205,7 +205,6 @@ else
     public bool host = false, inRoom = false;
     private HubConnection? hubConnection;
 
-    private TaskCompletionSource<bool> filterCompletionSource = new TaskCompletionSource<bool>(); // this handles if the filter has been set.
 
 
     protected override async Task OnInitializedAsync()
@@ -277,15 +276,6 @@ else
             selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
             await hubConnection.SendAsync("SetFilter", roomName, selectedAnimes);
 
-            filterCompletionSource = new TaskCompletionSource<bool>();
-            await filterCompletionSource.Task;
-
-
-            if (!selectedAnimes.Contains(currentVideo.animeName))
-            {                
-                await NewOpening();
-            }
-
         }
     }
 
@@ -304,7 +294,7 @@ else
         hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
         {
             if (host)
-            {                
+            {
                 await FilterAnime(); // send filters to everyone since new player joined
             }
             await PlayerJoinedSendOpening();
@@ -373,15 +363,22 @@ else
             await InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<List<string>>("RecieveFilter", (selectAnime) =>
+        hubConnection.On<List<string>>("RecieveFilter", async (selectAnime) =>
         {
             selectedAnimes = selectAnime;
 
             selectedFilter = true;
             videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
-            InvokeAsync(StateHasChanged);
+            if (host)
+            {
+                if (!selectedAnimes.Contains(currentVideo.animeName))
+                {
+                    await NewOpening();
+                }
+            }
 
-            filterCompletionSource.SetResult(true); //the filtering has finished.
+            await InvokeAsync(StateHasChanged);
+
         });
 
         hubConnection.On<ChatMessage>("RecieveMessage", async (incomingMessage) =>
@@ -485,7 +482,7 @@ else
     public async Task NewOpening()
     {
         if (host && hubConnection is not null)
-        {            
+        {
             videoIndex = rnd.Next(videoFiles.Count);
             await hubConnection.SendAsync("SendVideo", roomName, videoIndex);
         }
