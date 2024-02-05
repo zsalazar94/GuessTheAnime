@@ -10,7 +10,7 @@
 <PageTitle>Anime Openings Tester</PageTitle>
 
 <head>
-    <link href="css/Multiplayer.css" rel="stylesheet">
+    <link href="css/Multiplayer.css?version=0.1" rel="stylesheet">
 </head>
 
 
@@ -121,17 +121,25 @@ else
                         @foreach (ChatMessage message in messages)
                         {
                             <li>
-                                <span style="color: @message.userColor;">@message.username</span> : @message.message
+                                <span class="message-text" style="color: @message.userColor;">@message.username</span> : @message.message
                             </li>
                         }
                     </ul>
                     <!-- Input and Controls Container -->
                     <div class="input-controls-container">
                         <!-- Textarea for New Messages -->
-                        <textarea class="chat-input" placeholder="Type a message..." @bind=newMessage></textarea>
+                        <textarea id="chattextarea" class="chat-input" placeholder="Type a message..."
+                                  @bind-value=newMessage @bind-value:event="onchange"
+                                  @onkeydown=HandleEnterKeyPress></textarea>
                         <!-- Color Picker and Send Button Container -->
                         <div class="controls-container">
-                            <input type="color" @bind="userColor" class="color-picker" />
+                            <div class="color-picker-container">
+                                <input type="color" id="colorPicker" @bind="userColor" class="color-picker" />
+                                <label for="colorPicker" class="color-picker-icon">
+                                    <img src="eye_drop.png" alt="Color Picker" />
+                                </label>
+                            </div>
+
                             <button class="send-button" @onclick=sendChatMessage>Send</button>
                         </div>
                     </div>
@@ -142,25 +150,29 @@ else
 
         <!-- Scoreboard Container -->
         <div class="scoreboard-container">
-            <h3>Scoreboard</h3>
-            <ul class="score-list">
-                @foreach (var item in scoreDict)
-                {
-                    <li>
-                        @item.Key: @item.Value
-                        @if (usersWhoHaveGuessed.Contains(item.Key))
-                        {
-                            <span class="check-mark">&#x2714;</span> <!-- Unicode check mark -->
-                        }
-                    </li>
-                }
-            </ul>
+            <div class="scoreboard-title">
+                <h3>Scoreboard</h3>
+            </div>
+            <div class="scoreboard-content">
+                <ul class="score-list">
+                    @foreach (var item in scoreDict)
+                    {
+                        <li>
+                            @item.Key: @item.Value
+                            @if (usersWhoHaveGuessed.Contains(item.Key))
+                            {
+                                <span class="check-mark">&#x2714;</span> <!-- Unicode check mark -->
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
         </div>
     </div>
 }
 
 
-@code 
+@code
 {
     public string animeGuess = ""; // what the user has guessed is the answer
     public bool hasGuessed = false; // decides whether to hide submit guess button.
@@ -194,6 +206,7 @@ else
     private HubConnection? hubConnection;
 
 
+
     protected override async Task OnInitializedAsync()
     {
         await StartHub();
@@ -216,8 +229,23 @@ else
 
     }
 
+    private async Task HandleEnterKeyPress(KeyboardEventArgs e)
+    {
+        await js.InvokeVoidAsync("blurElementById", "chattextarea");
+        await js.InvokeVoidAsync("focusElementById", "chattextarea");
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await sendChatMessage();
+        }
+    }
+
     private async Task sendChatMessage()
     {
+        newMessage = newMessage.Trim();
+        if (newMessage == "") {
+            return;
+        }
+
         ChatMessage myMessage;
         if (userColor == "")
         {
@@ -227,7 +255,9 @@ else
         {
             myMessage = new ChatMessage(newMessage, userName, userColor);
         }
+        newMessage = ""; // clear chat box
         await hubConnection.SendAsync("SendMessage", roomName, myMessage);
+
     }
 
     private async Task ChangeFilterAnime() // toggles visibility of anime filters.
@@ -245,11 +275,6 @@ else
         {
             selectedAnimes = checkedAnimes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
             await hubConnection.SendAsync("SetFilter", roomName, selectedAnimes);
-
-            if (!selectedAnimes.Contains(currentVideo.animeName))
-            {                
-                await NewOpening();
-            }
 
         }
     }
@@ -269,7 +294,7 @@ else
         hubConnection.On<string>("PlayerJoined", async(joiningUserName) =>
         {
             if (host)
-            {                
+            {
                 await FilterAnime(); // send filters to everyone since new player joined
             }
             await PlayerJoinedSendOpening();
@@ -338,19 +363,34 @@ else
             await InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<List<string>>("RecieveFilter", (selectAnime) =>
+        hubConnection.On<List<string>>("RecieveFilter", async (selectAnime) =>
         {
             selectedAnimes = selectAnime;
 
             selectedFilter = true;
             videoFiles = videoFilesAll.Where(x => selectedAnimes.Contains(x.animeName)).ToList();
-            InvokeAsync(StateHasChanged);
+            if (host)
+            {
+                if (!selectedAnimes.Contains(currentVideo.animeName))
+                {
+                    await NewOpening();
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+
         });
 
         hubConnection.On<ChatMessage>("RecieveMessage", async (incomingMessage) =>
         {
+            bool scrollChat = await js.InvokeAsync<bool>("checkIfAtBottomOfChat");
             messages.Add(incomingMessage);
+
             await InvokeAsync(StateHasChanged);
+            if (scrollChat)
+            {
+                await js.InvokeVoidAsync("scrollToBottom");
+            }
         });
 
         hubConnection.On<string>("RecieveGuess", async (incomingUser) =>
@@ -442,7 +482,7 @@ else
     public async Task NewOpening()
     {
         if (host && hubConnection is not null)
-        {            
+        {
             videoIndex = rnd.Next(videoFiles.Count);
             await hubConnection.SendAsync("SendVideo", roomName, videoIndex);
         }

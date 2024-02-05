@@ -1,6 +1,8 @@
 ﻿/* General Styles */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    width: 50vw;
+    height: 100vh;
     margin: 0;
     padding: 0;
     background-color: #121212;
@@ -11,19 +13,26 @@ body {
 .main-container {
     display: flex;
     flex-direction: row;
+    width: 85vw;
+    align-items: start;
+
+}
+/*.main-container {
+    display: flex;
+    flex-direction: row;
     justify-content: center;
     align-items: start;
     padding: 1.25em;
 }
+    */
 
 /* Content and Scoreboard Containers */
 .content-container {
-    margin: 0.625em;
-    padding: 1.25em;
+    width: 80%;
     background-color: #1e1e1e;
-    border-radius: 0.5em;
     box-shadow: 0 0.125em 0.3125em rgba(255, 255, 255, 0.1);
     flex-grow: 1; /* Allows the container to grow to fill available space */
+    margin-right: 1%;
 }
 
 /* Media and Chat Container */
@@ -36,7 +45,7 @@ body {
 
 /* Video Section */
 .video-section {
-    width: 80%; /* Takes up 80% of the container */
+    width: 75%; 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -54,7 +63,7 @@ body {
 
 /* Chat Section */
 .chat-section {
-    width: 20%; 
+    width: 25%; 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -85,9 +94,30 @@ body {
 }
 
 /* Color Picker */
+.color-picker-container {
+    position: relative;
+    height: 50%;
+}
+
 .color-picker {
-    cursor: pointer; /* Changes cursor to indicate clickable area */
-    height: 60%;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.color-picker-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    cursor: pointer;
 }
 
 /* Send Button */
@@ -120,6 +150,13 @@ body {
     align-items: center;
 }
 
+/* Chat message*/
+.message-text {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+
 
 /* Adjustments for when the video is not visible */
 .video-section.hidden {
@@ -136,13 +173,24 @@ body {
 
 /* Scoreboard */
 .scoreboard-container {
-    flex-basis: 20%; 
-    margin: 0.625em;
-    padding: 1.25em;
+    width: 40%;
+    /*margin: 0.625em;
+    padding: 1.25em;*/
     background-color: #1e1e1e;
     border-radius: 0.5em;
     box-shadow: 0 0.125em 0.3125em rgba(255, 255, 255, 0.1);
     align-self: start; /* Aligns this container to the top */
+}
+
+/* Scoreboard title*/
+.scoreboard-title {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* Scores in the scoreboard*/
+.scoreboard-content {
 }
 
 /* Buttons and Inputs */
