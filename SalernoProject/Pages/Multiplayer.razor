@@ -231,8 +231,6 @@ else
 
     private async Task HandleEnterKeyPress(KeyboardEventArgs e)
     {
-        await js.InvokeVoidAsync("blurElementById", "chattextarea");
-        await js.InvokeVoidAsync("focusElementById", "chattextarea");
         if (e.Key == "Enter" && !e.ShiftKey)
         {
             await sendChatMessage();
@@ -241,6 +239,8 @@ else
 
     private async Task sendChatMessage()
     {
+        await js.InvokeVoidAsync("blurElementById", "chattextarea");
+        await js.InvokeVoidAsync("focusElementById", "chattextarea");
         newMessage = newMessage.Trim();
         if (newMessage == "") {
             return;
